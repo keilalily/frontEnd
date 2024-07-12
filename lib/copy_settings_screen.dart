@@ -1,0 +1,182 @@
+import 'package:flutter/material.dart';
+import 'package:frontend/copy_payment_screen.dart';
+import 'package:frontend/custom_app_bar.dart';
+import 'package:frontend/custom_button_row.dart';
+
+class CopySettingsScreen extends StatefulWidget {
+  const CopySettingsScreen({super.key});
+
+  @override
+  CopySettingsScreenState createState() => CopySettingsScreenState();
+}
+
+class CopySettingsScreenState extends State<CopySettingsScreen> {
+  int _paperSizeIndex = -1; // Track selected index for Paper Size
+  int _colorIndex = -1; // Track selected index for Color
+  int _resolutionIndex = -1; // Track selected index for Resolution
+  int _copies = 0; // Track number of copies input
+
+  bool get canProceed => _paperSizeIndex != -1 && _colorIndex != -1 &&
+      _resolutionIndex != -1 && _copies > 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: const CustomAppBar(
+          titleText: 'BULSU HC VENDO PRINTING MACHINE',
+        ),
+        backgroundColor: const Color(0xFF2B2E4A),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Container(
+                    color: const Color(0xFF263238),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.file_copy,
+                          size: 60, // Adjust size as needed
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 18), // Spacer between icon and text
+                        Text(
+                          'Place your document on the scanner glass.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding (
+                  padding: const EdgeInsets.symmetric(horizontal: 50.0),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      padding: const EdgeInsets.all(14.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF63678E),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "COPY SETTINGS",
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Customize your photocopy options.",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            CustomButtonRow(
+                              title: "Paper Size",
+                              options: const ["Letter (8.5\" x 11\")", "Legal (8.5\" x 13\")"],
+                              selectedIndex: _paperSizeIndex,
+                              onSelected: (index) {
+                                setState(() {
+                                  _paperSizeIndex = index;
+                                });
+                              },
+                            ),
+                            CustomButtonRow(
+                              title: "Color",
+                              options: const ["Colored", "Grayscale"],
+                              selectedIndex: _colorIndex,
+                              onSelected: (index) {
+                                setState(() {
+                                  _colorIndex = index;
+                                });
+                              },
+                            ),
+                            CustomButtonRow(
+                              title: "Resolution",
+                              options: const ["High", "Medium", "Low"],
+                              selectedIndex: _resolutionIndex,
+                              onSelected: (index) {
+                                setState(() {
+                                  _resolutionIndex = index;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              onChanged: (value) {
+                                setState(() {
+                                  _copies = int.tryParse(value) ?? 0;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Copies',
+                                filled: true,
+                                fillColor: Colors.white,
+                                hintText: "Enter number of copies (1-10)",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Center(
+                              child: ElevatedButton(
+                                onPressed: canProceed ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CopyPaymentScreen(
+                                        paperSizeIndex: _paperSizeIndex,
+                                        colorIndex: _colorIndex,
+                                        resolutionIndex: _resolutionIndex,
+                                        copies: _copies,
+                                      ),
+                                    ),
+                                  );
+                                } : null,
+                                style: ElevatedButton.styleFrom(
+                                    textStyle: const TextStyle(fontSize: 20),
+                                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                                    minimumSize: const Size(100, 30),
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: const Color(0xFF8D6E63),
+                                ),
+                                child: const Text(
+                                  "PROCEED",
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
