@@ -10,7 +10,7 @@ class PrintPaymentScreen extends StatefulWidget {
   final int colorIndex;
   final int pagesIndex;
   final List<int> selectedPages;
-  final int resolutionIndex;
+  // final int resolutionIndex;
   final int copies;
   final Uint8List pdfBytes;
 
@@ -22,7 +22,7 @@ class PrintPaymentScreen extends StatefulWidget {
     required this.colorIndex,
     required this.pagesIndex,
     required this.selectedPages,
-    required this.resolutionIndex,
+    // required this.resolutionIndex,
     required this.copies,
     required this.pdfBytes
   });
@@ -374,41 +374,41 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
     }
   }
 
-  String getResolution() {
-    switch (widget.resolutionIndex) {
-      case 0:
-        return 'High';
-      case 1:
-        return 'Medium';
-      case 2:
-        return 'Low';
-      default:
-        return '';
-    }
-  }
+  // String getResolution() {
+  //   switch (widget.resolutionIndex) {
+  //     case 0:
+  //       return 'High';
+  //     case 1:
+  //       return 'Medium';
+  //     case 2:
+  //       return 'Low';
+  //     default:
+  //       return '';
+  //   }
+  // }
 
   double calculateTotalPayment() {
     double basePrice = 1.0;
     double multiplier = 1.0;
-    double resolutionFactor = 1.0;
+    // double resolutionFactor = 1.0;
 
-    if (widget.colorIndex == 1) {
-      multiplier = 0.5;
-    }
+    // if (widget.colorIndex == 1) {
+    //   multiplier = 0.5;
+    // }
 
-    switch (widget.resolutionIndex) {
-      case 0:
-        resolutionFactor = 1.5;
-        break;
-      case 2:
-        resolutionFactor = 0.5;
-        break;
-      default:
-        break;
-    }
+    // switch (widget.resolutionIndex) {
+    //   case 0:
+    //     resolutionFactor = 1.5;
+    //     break;
+    //   case 2:
+    //     resolutionFactor = 0.5;
+    //     break;
+    //   default:
+    //     break;
+    // }
 
     int totalPages = widget.pagesIndex == 0 ? widget.pageCount : widget.selectedPages.length;
-    double totalPayment = totalPages * basePrice * multiplier * resolutionFactor * widget.copies;
+    double totalPayment = totalPages * basePrice * multiplier * /*resolutionFactor **/ widget.copies;
 
     return totalPayment;
   }

@@ -98,35 +98,6 @@ class PrintUploadScreenState extends State<PrintUploadScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  if (selectedFileName != null)
-                    Center (
-                      child: Column(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () => _uploadFile(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8D6E63),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                              textStyle: const TextStyle(fontSize: 18),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('Upload'),
-                          ),
-                          const SizedBox(height: 20),
-                          Center (
-                            child: Text(
-                              'Selected File: $selectedFileName',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _selectFile,
                     style: ElevatedButton.styleFrom(
@@ -137,6 +108,35 @@ class PrintUploadScreenState extends State<PrintUploadScreen> {
                     ),
                     child: const Text('Select File'),
                   ),
+                  const SizedBox(height: 20),
+                  if (selectedFileName != null)
+                    Center (
+                      child: Column(
+                        children: [
+                          Center (
+                            child: Text(
+                              'Selected File: $selectedFileName',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                color: Colors.white,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () => _uploadFile(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8D6E63),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                              textStyle: const TextStyle(fontSize: 18),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Upload'),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
       ),

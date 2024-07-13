@@ -25,7 +25,7 @@ class PrintSettingsScreenState extends State<PrintSettingsScreen> {
   int _paperSizeIndex = -1;
   int _colorIndex = -1;
   int _pagesIndex = -1;
-  int _resolutionIndex = -1;
+  // int _resolutionIndex = -1;
   int _copies = 0;
   bool showSpecificPages = false;
   List<int> selectedPages = [];
@@ -45,7 +45,7 @@ class PrintSettingsScreenState extends State<PrintSettingsScreen> {
       _paperSizeIndex != -1 &&
       _colorIndex != -1 &&
       _pagesIndex != -1 &&
-      _resolutionIndex != -1 &&
+      // _resolutionIndex != -1 &&
       _copies > 0 &&
       (!showSpecificPages || selectedPages.isNotEmpty);
 
@@ -229,16 +229,16 @@ class PrintSettingsScreenState extends State<PrintSettingsScreen> {
                               ),
                             ),
                           ],
-                          CustomButtonRow(
-                            title: "Resolution",
-                            options: const ["High", "Medium", "Low"],
-                            selectedIndex: _resolutionIndex,
-                            onSelected: (index) {
-                              setState(() {
-                                _resolutionIndex = index;
-                              });
-                            },
-                          ),
+                          // CustomButtonRow(
+                          //   title: "Resolution",
+                          //   options: const ["High", "Medium", "Low"],
+                          //   selectedIndex: _resolutionIndex,
+                          //   onSelected: (index) {
+                          //     setState(() {
+                          //       _resolutionIndex = index;
+                          //     });
+                          //   },
+                          // ),
                           const SizedBox(height: 16),
                           TextField(
                             onChanged: (value) {
@@ -271,7 +271,7 @@ class PrintSettingsScreenState extends State<PrintSettingsScreen> {
                                             colorIndex: _colorIndex,
                                             pagesIndex: _pagesIndex,
                                             selectedPages: selectedPages,
-                                            resolutionIndex: _resolutionIndex,
+                                            // resolutionIndex: _resolutionIndex,
                                             copies: _copies,
                                             pdfBytes: widget.pdfBytes
                                           ),

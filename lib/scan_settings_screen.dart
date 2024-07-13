@@ -15,10 +15,9 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
   int _paperSizeIndex = -1; // Track selected index for Paper Size
   int _colorIndex = -1; // Track selected index for Color
   int _resolutionIndex = -1; // Track selected index for Resolution
-  int _copies = 0; // Track number of copies input
 
   bool get canProceed => _paperSizeIndex != -1 && _colorIndex != -1 &&
-      _resolutionIndex != -1 && _copies > 0;
+      _resolutionIndex != -1;
 
   @override
   Widget build(BuildContext context) {
@@ -124,23 +123,6 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            TextField(
-                              onChanged: (value) {
-                                setState(() {
-                                  _copies = int.tryParse(value) ?? 0;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Copies',
-                                filled: true,
-                                fillColor: Colors.white,
-                                hintText: "Enter number of copies (1-10)",
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
                             Center(
                               child: ElevatedButton(
                                 onPressed: canProceed ? () {
@@ -151,7 +133,6 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
                                         paperSizeIndex: _paperSizeIndex,
                                         colorIndex: _colorIndex,
                                         resolutionIndex: _resolutionIndex,
-                                        copies: _copies,
                                       ),
                                     ),
                                   );

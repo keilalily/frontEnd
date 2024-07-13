@@ -5,14 +5,12 @@ class ScanPaymentScreen extends StatefulWidget {
   final int paperSizeIndex;
   final int colorIndex;
   final int resolutionIndex;
-  final int copies;
 
   const ScanPaymentScreen({
     super.key,
     required this.paperSizeIndex,
     required this.colorIndex,
     required this.resolutionIndex,
-    required this.copies,
   });
 
   @override
@@ -102,8 +100,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                     const SizedBox(height: 16),
                                     _buildSettingRow('Print Color:', getColor()),
                                     _buildSettingRow('Paper Size:', getPaperSize()),
-                                    _buildSettingRow('Resolution:', getResolution()),
-                                    _buildSettingRow('Number of Copies:', widget.copies.toString()),
+                                    _buildSettingRow('Resolution:', getResolution())
                                   ],
                                 ),
                               ),
@@ -288,7 +285,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
         break;
     }
 
-    double totalPayment = basePrice * multiplier * resolutionFactor * widget.copies;
+    double totalPayment = basePrice * multiplier * resolutionFactor;
 
     return totalPayment;
   }
