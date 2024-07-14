@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/admin_settings_screen.dart';
 import 'package:frontend/custom_app_bar.dart';
+import 'config.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -11,20 +14,104 @@ class AdminLoginScreen extends StatefulWidget {
 
 class AdminLoginScreenState extends State<AdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _username = '';
-  String _password = '';
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      // Perform login logic here
-      // Assuming login is successful
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AdminSettingsScreen()),
-      );
+      final String username = _usernameController.text;
+      final String password = _passwordController.text;
+  
+      http.post(
+        Uri.parse('http://${AppConfig.ipAddress}:3000/login'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'username': username,
+          'password': password,
+        }),
+      ).then((response) {
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = jsonDecode(response.body);
+          final String token = data['token'];
+          // Handle successful login, e.g., save the token and navigate to another screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AdminSettingsScreen()),
+          );
+        } else {
+          final Map<String, dynamic> error = jsonDecode(response.body);
+          final String message = error['message'];
+          // Show error message
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Login Failed'),
+              content: Text(message),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          );
+        }
+      });
     }
   }
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
+
+  //   Future<void> _login() async {
+  //     final String username = _usernameController.text;
+  //     final String password = _passwordController.text;
+
+
+
+  //   final response = await http.post(
+  //     Uri.parse('http://${AppConfig.ipAddress}:3000/login'),
+  //     headers: <String, String>{
+  //       'Content-Type': 'application/json; charset=UTF-8',
+  //     },
+  //     body: jsonEncode(<String, String>{
+  //       'username': username,
+  //       'password': password,
+  //     }),
+  //   );
+
+  //   if (response.statusCode == 200) {
+  //     final Map<String, dynamic> data = jsonDecode(response.body);
+  //     final String token = data['token'];
+  //     // Handle successful login, e.g., save the token and navigate to another screen
+  //          Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => AdminSettingsScreen()),
+  //     );
+  //   } else {
+  //     final Map<String, dynamic> error = jsonDecode(response.body);
+  //     final String message = error['message'];
+  //     // Show error message
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: Text('Login Failed'),
+  //         content: Text(message),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             child: Text('OK'),
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  // }
+      
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,6 +153,7 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       TextFormField(
+                        controller: _usernameController,
                         decoration: const InputDecoration(labelText: 'Username'),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -73,22 +161,19 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                           }
                           return null;
                         },
-                        onSaved: (value) {
-                          _username = value!;
-                        },
+                       
                       ),
                       TextFormField(
                         decoration: const InputDecoration(labelText: 'Password'),
                         obscureText: true,
+                        controller: _passwordController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your password';
                           }
                           return null;
                         },
-                        onSaved: (value) {
-                          _password = value!;
-                        },
+                    
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(

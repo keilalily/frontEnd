@@ -6,6 +6,7 @@ import 'dart:html' as html;
 import 'custom_app_bar.dart';
 import 'print_settings_screen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'config.dart';
 
 class PrintWirelessUploadScreen extends StatefulWidget {
   const PrintWirelessUploadScreen({super.key});
@@ -27,7 +28,7 @@ class PrintWirelessUploadScreenState extends State<PrintWirelessUploadScreen> {
   @override
   void initState() {
     super.initState();
-    const String ipAddress = "192.168.100.33";
+    const String ipAddress = "${AppConfig.ipAddress}";
     const String wsUrl = 'ws://$ipAddress:3000';
     channel = WebSocketChannel.connect(Uri.parse(wsUrl));
     channel.stream.listen((message) {
@@ -88,7 +89,7 @@ class PrintWirelessUploadScreenState extends State<PrintWirelessUploadScreen> {
   Widget build(BuildContext context) {
     final String currentUrl = html.window.location.href;
     final Uri uri = Uri.parse(currentUrl);
-    const String ipAddress = "192.168.100.33";
+    const String ipAddress = "${AppConfig.ipAddress}";
     final String uploadUrl = '${uri.scheme}://$ipAddress:${uri.port}/#/upload';
 
     return MaterialApp(
