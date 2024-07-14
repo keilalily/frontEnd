@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/custom_app_bar.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/status.dart' as status;
 
 class PrintPaymentScreen extends StatefulWidget {
   final String fileName;
@@ -10,7 +13,6 @@ class PrintPaymentScreen extends StatefulWidget {
   final int colorIndex;
   final int pagesIndex;
   final List<int> selectedPages;
-  // final int resolutionIndex;
   final int copies;
   final Uint8List pdfBytes;
 
@@ -22,9 +24,8 @@ class PrintPaymentScreen extends StatefulWidget {
     required this.colorIndex,
     required this.pagesIndex,
     required this.selectedPages,
-    // required this.resolutionIndex,
     required this.copies,
-    required this.pdfBytes
+    required this.pdfBytes,
   });
 
   @override
@@ -39,14 +40,25 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   int currentPageIndex = 0;
   int currentPage = 1;
 
+  final WebSocketChannel channel = WebSocketChannel.connect(
+    Uri.parse('ws://192.168.100.33:3000'),
+  );
+
   @override
   void initState() {
     super.initState();
     fetchTotalPayment();
     pdfController = PdfController(
       document: PdfDocument.openData(widget.pdfBytes),
-      initialPage: widget.pagesIndex == 1 ? widget.selectedPages[0] : currentPage
+      initialPage: widget.pagesIndex == 1 ? widget.selectedPages[0] : currentPage,
     );
+
+    channel.stream.listen((message) {
+      final data = jsonDecode(message);
+      setState(() {
+        paymentInserted = data['amountInserted'].toDouble();
+      });
+    });
   }
 
   void fetchTotalPayment() {
@@ -54,12 +66,6 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
       setState(() {
         totalPayment = calculateTotalPayment();
       });
-    });
-  }
-
-  void updatePaymentInserted(double amount) {
-    setState(() {
-      paymentInserted += amount; // Update payment inserted
     });
   }
 
@@ -71,16 +77,16 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
           pdfController.animateToPage(
             widget.selectedPages[currentPageIndex],
             duration: const Duration(milliseconds: 250),
-            curve: Curves.easeIn
+            curve: Curves.easeIn,
           );
         });
       }
     } else {
       if (currentPage > 1) {
         pdfController.previousPage(
-          duration: const Duration(milliseconds: 250), 
-          curve: Curves.easeOut
-        );  
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
         setState(() {
           currentPage--;
         });
@@ -96,21 +102,28 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
           pdfController.animateToPage(
             widget.selectedPages[currentPageIndex],
             duration: const Duration(milliseconds: 250),
-            curve: Curves.easeIn
+            curve: Curves.easeIn,
           );
         });
       }
     } else {
       if (currentPage < widget.pageCount) {
         pdfController.nextPage(
-          duration: const Duration(milliseconds: 250), 
-          curve: Curves.easeIn
-        );                
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeIn,
+        );
         setState(() {
           currentPage++;
         });
       }
     }
+  }
+
+  @override
+  void dispose() {
+    pdfController.dispose();
+    channel.sink.close(status.goingAway);
+    super.dispose();
   }
 
   @override
@@ -133,7 +146,7 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                       child: Column(
                         children: [
                           Expanded(
-                            child: Padding (
+                            child: Padding(
                               padding: const EdgeInsets.only(left: 16.0, bottom: 32.0),
                               child: PdfView(
                                 controller: pdfController,
@@ -146,27 +159,18 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 IconButton(
-                                  icon: const Icon(
-                                    Icons.arrow_back,
-                                    color: Colors.white
-                                  ),
-                                  onPressed: _previousPage
+                                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                  onPressed: _previousPage,
                                 ),
                                 Text(
                                   widget.pagesIndex == 0
-                                    ? '$currentPage/${widget.pageCount}'
-                                    : '${currentPageIndex + 1}/${widget.selectedPages.length}',
-                                  style: const TextStyle(
-                                    fontSize: 18.0,
-                                    color: Colors.white
-                                  ),
+                                      ? '$currentPage/${widget.pageCount}'
+                                      : '${currentPageIndex + 1}/${widget.selectedPages.length}',
+                                  style: const TextStyle(fontSize: 18.0, color: Colors.white),
                                 ),
                                 IconButton(
-                                  icon: const Icon(
-                                    Icons.arrow_forward,
-                                    color: Colors.white
-                                  ),
-                                  onPressed: _nextPage
+                                  icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                                  onPressed: _nextPage,
                                 ),
                               ],
                             ),
@@ -269,9 +273,6 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
                                               });
-                                              // Call your backend to handle payment insertion
-                                              // For demonstration, simulate payment insertion
-                                              updatePaymentInserted(50.0); // Simulate an initial payment of 50
                                             },
                                             style: ElevatedButton.styleFrom(
                                               textStyle: const TextStyle(fontSize: 20),
@@ -327,12 +328,6 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    pdfController.dispose(); // Dispose of the PdfController
-    super.dispose();
-  }
-
   Widget _buildSettingRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -374,41 +369,16 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
     }
   }
 
-  // String getResolution() {
-  //   switch (widget.resolutionIndex) {
-  //     case 0:
-  //       return 'High';
-  //     case 1:
-  //       return 'Medium';
-  //     case 2:
-  //       return 'Low';
-  //     default:
-  //       return '';
-  //   }
-  // }
-
   double calculateTotalPayment() {
     double basePrice = 1.0;
     double multiplier = 1.0;
-    // double resolutionFactor = 1.0;
 
-    // if (widget.colorIndex == 1) {
-    //   multiplier = 0.5;
-    // }
-
-    // switch (widget.resolutionIndex) {
-    //   case 0:
-    //     resolutionFactor = 1.5;
-    //     break;
-    //   case 2:
-    //     resolutionFactor = 0.5;
-    //     break;
-    //   default:
-    //     break;
-    // }
+    if (widget.colorIndex == 1) {
+      multiplier = 0.5;
+    }
 
     int totalPages = widget.pagesIndex == 0 ? widget.pageCount : widget.selectedPages.length;
-    double totalPayment = totalPages * basePrice * multiplier * /*resolutionFactor **/ widget.copies;
+    double totalPayment = totalPages * basePrice * multiplier * widget.copies;
 
     return totalPayment;
   }
