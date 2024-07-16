@@ -116,15 +116,19 @@ class PrintUploadScreenState extends State<PrintUploadScreen> {
                     Center (
                       child: Column(
                         children: [
-                          Center (
-                            child: Text(
-                              'Selected File: $selectedFileName',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
+                          const Icon(
+                            Icons.file_copy_outlined,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Selected File: $selectedFileName',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
                             ),
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 20),
                           ElevatedButton(

@@ -159,6 +159,12 @@ class PrintWirelessUploadScreenState extends State<PrintWirelessUploadScreen> {
                           if (selectedFileName != null)
                             Column(
                               children: [
+                                const Icon(
+                                  Icons.file_copy_outlined,
+                                  size: 40,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(height: 20),
                                 Text(
                                   'Selected File: $selectedFileName',
                                   style: const TextStyle(

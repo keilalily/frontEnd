@@ -186,7 +186,7 @@ class HomePageState extends State<HomePage> {
                                 foregroundColor: Colors.white,
                                 backgroundColor: const Color(0xFF8D6E63),
                               ),
-                              icon: const Icon(Icons.scanner, size: 70),
+                              icon: const Icon(Icons.document_scanner, size: 70),
                               label: const Text('SCAN'),
                             ),
                           ),

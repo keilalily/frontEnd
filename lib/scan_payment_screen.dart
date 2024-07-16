@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:frontend/custom_app_bar.dart';
 
 class ScanPaymentScreen extends StatefulWidget {
@@ -21,19 +25,61 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   double totalPayment = 0.0;
   double paymentInserted = 0.0;
   bool proceedToPaymentClicked = false;
+  Uint8List? scannedImageData;
 
   @override
   void initState() {
     super.initState();
     fetchTotalPayment();
+    fetchScannedImage();
   }
 
   void fetchTotalPayment() {
+    // Simulate fetching total payment
     Future.delayed(const Duration(seconds: 2), () {
       setState(() {
         totalPayment = calculateTotalPayment();
       });
     });
+  }
+
+  void fetchScannedImage() async {
+    try {
+      // Replace with your backend URL
+      String apiUrl = 'http://your-backend-url/scan'; // Replace with your actual backend URL
+
+      // Make POST request to backend
+      var response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'paperSizeIndex': widget.paperSizeIndex,
+          'colorIndex': widget.colorIndex,
+          'resolutionIndex': widget.resolutionIndex,
+        }),
+      );
+
+      // Handle response
+      if (response.statusCode == 200) {
+        // Decode the response body
+        Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+        // Extract scanned image data (assuming it's base64 encoded)
+        String imageDataString = responseBody['imageData'];
+        Uint8List decodedBytes = base64Decode(imageDataString);
+
+        // Update state with scanned image data
+        setState(() {
+          scannedImageData = decodedBytes;
+        });
+      } else {
+        // Handle error
+        print('Error fetching scanned image: ${response.statusCode}');
+      }
+    } catch (error) {
+      // Handle error
+      print('Error fetching scanned image: $error');
+    }
   }
 
   void updatePaymentInserted(double amount) {
@@ -61,12 +107,17 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                       flex: 1,
                       child: Container(
                         color: const Color(0xFF263238),
-                        child: const Center(
-                          child: Text(
-                            'Scan Final Preview',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
+                        child: scannedImageData != null
+                            ? Image.memory(
+                                scannedImageData!,
+                                fit: BoxFit.cover,
+                              )
+                            : const Center(
+                                child: Text(
+                                  'No image available',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -200,7 +251,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                     backgroundColor: const Color(0xFF8D6E63),
                                   ),
                                   child: const Text(
-                                    'PHOTOCOPY',
+                                    'UPLOAD',
                                     style: TextStyle(
                                       fontSize: 16,
                                       color: Colors.white,

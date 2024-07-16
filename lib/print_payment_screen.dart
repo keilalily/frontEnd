@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:frontend/config.dart';
 import 'package:frontend/custom_app_bar.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -41,7 +42,7 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   int currentPage = 1;
 
   final WebSocketChannel channel = WebSocketChannel.connect(
-    Uri.parse('ws://192.168.100.33:3000'),
+    Uri.parse('ws://${AppConfig.ipAddress}:3000'),
   );
 
   @override

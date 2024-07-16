@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/scan_payment_screen.dart';
-import 'package:frontend/custom_app_bar.dart';
-import 'package:frontend/custom_button_row.dart';
+import 'package:frontend/config.dart';
+import 'package:http/http.dart' as http;
 
+import 'scan_payment_screen.dart';
+import 'custom_app_bar.dart';
+import 'custom_button_row.dart';
 
 class ScanSettingsScreen extends StatefulWidget {
   const ScanSettingsScreen({super.key});
@@ -16,8 +18,62 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
   int _colorIndex = -1; // Track selected index for Color
   int _resolutionIndex = -1; // Track selected index for Resolution
 
-  bool get canProceed => _paperSizeIndex != -1 && _colorIndex != -1 &&
-      _resolutionIndex != -1;
+  bool get canProceed =>
+      _paperSizeIndex != -1 && _colorIndex != -1 && _resolutionIndex != -1;
+
+  Future<void> startScan() async {
+    // Construct the URL to your Node.js backend endpoint
+    final url = Uri.parse('http://${AppConfig.ipAddress}:3000/scan');
+
+    try {
+      // Send a POST request to start scanning with selected settings
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: {
+          'paperSizeIndex': _paperSizeIndex,
+          'colorIndex': _colorIndex,
+          'resolutionIndex': _resolutionIndex,
+        },
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        // Navigate to ScanPaymentScreen with selected settings
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ScanPaymentScreen(
+              paperSizeIndex: _paperSizeIndex,
+              colorIndex: _colorIndex,
+              resolutionIndex: _resolutionIndex,
+            ),
+          ),
+        );
+      } else {
+        // Handle error if the request fails
+        throw Exception('Failed to start scanning: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      // Handle network or server errors
+      print('Error starting scan: $e');
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Failed to start scanning. Please try again later.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +105,7 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
                           'Place your document on the scanner glass.',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20
+                            fontSize: 20,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -59,7 +115,7 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
                 ),
               ),
               Expanded(
-                child: Padding (
+                child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 50.0),
                   child: SingleChildScrollView(
                     child: Container(
@@ -94,7 +150,10 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
                             const SizedBox(height: 10),
                             CustomButtonRow(
                               title: "Paper Size",
-                              options: const ["Letter (8.5\" x 11\")", "Legal (8.5\" x 13\")"],
+                              options: const [
+                                "Letter (8.5\" x 11\")",
+                                "Legal (8.5\" x 13\")"
+                              ],
                               selectedIndex: _paperSizeIndex,
                               onSelected: (index) {
                                 setState(() {
@@ -125,27 +184,17 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
                             const SizedBox(height: 16),
                             Center(
                               child: ElevatedButton(
-                                onPressed: canProceed ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ScanPaymentScreen(
-                                        paperSizeIndex: _paperSizeIndex,
-                                        colorIndex: _colorIndex,
-                                        resolutionIndex: _resolutionIndex,
-                                      ),
-                                    ),
-                                  );
-                                } : null,
+                                onPressed: canProceed ? startScan : null,
                                 style: ElevatedButton.styleFrom(
-                                    textStyle: const TextStyle(fontSize: 20),
-                                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                                    minimumSize: const Size(100, 30),
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: const Color(0xFF8D6E63),
+                                  textStyle: const TextStyle(fontSize: 20),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 50, vertical: 20),
+                                  minimumSize: const Size(100, 30),
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: const Color(0xFF8D6E63),
                                 ),
                                 child: const Text(
-                                  "PROCEED",
+                                  "SCAN",
                                 ),
                               ),
                             ),

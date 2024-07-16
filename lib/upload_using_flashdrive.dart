@@ -78,13 +78,9 @@ class UploadUsingFlashdriveScreenState
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 20),
-                        const Icon(
-                          Icons.folder,
-                          size: 50,
-                          color: Colors.white,
-                        ),
+                        
                         const SizedBox(height: 10),
-                        ElevatedButton(
+                        ElevatedButton.icon(
                           onPressed: _loadFilesFromStorage,
                           style: ElevatedButton.styleFrom(
                             textStyle: const TextStyle(fontSize: 20),
@@ -93,7 +89,8 @@ class UploadUsingFlashdriveScreenState
                             foregroundColor: Colors.white,
                             backgroundColor: const Color(0xFF8D6E63),
                           ),
-                          child: const Text('Choose File'),
+                          icon: const Icon(Icons.folder),
+                          label: const Text('Choose File'),
                         ),
                         const SizedBox(height: 20),
                         if (isLoading || isUploading)
