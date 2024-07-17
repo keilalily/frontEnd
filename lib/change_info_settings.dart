@@ -29,7 +29,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
   void _fetchAdminDetails() async {
     // Fetch admin details from backend
     try {
-      final response = await http.get(Uri.parse('http://192.168.100.33:3000/getAdminDetails'));
+      final response = await http.get(Uri.parse('http://${AppConfig.ipAddress}:3000/getAdminDetails'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
@@ -139,41 +139,70 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 124.0, vertical: 16.0),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 100.0, vertical: 32.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10.0),
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 124.0, vertical: 16.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 100.0, vertical: 32.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: SingleChildScrollView(
           child: Column(
-            children: [
-              const Center(
-                child: Text(
-                  'Change Info Settings',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+            children: <Widget>[
+              const Text(
+                'Change Information Settings',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 24),
-
-              // Display current email if set
-              if (emailSet)
-                Text(
-                  'Email: $currentEmail',
-                  style: TextStyle(fontSize: 20),
-                ),
+              const SizedBox(height: 20),
+              const Text(
+                'Details',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 16),
-              if (emailSet)
-                Center(
-                  child: ElevatedButton(
+              // Display all details first
+              _buildDetailsDisplayRow('Email', currentEmail),
+              _buildDetailsDisplayRow('Username', currentUsername),
+              const SizedBox(height: 16),
+
+              // Display the buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (emailSet)
+                    ElevatedButton(
+                      onPressed: () {
+                        _showChangeDialog('Email', 'Email', _emailController, (newEmail) {
+                          _updateAdminDetails(newEmail, '', '');
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color(0xFF8D6E63),
+                      ),
+                      child: const Text('Change Email'),
+                    ),
+                  if (!emailSet)
+                    ElevatedButton(
+                      onPressed: () {
+                        _showChangeDialog('Email', 'Email', _emailController, (newEmail) {
+                          _updateAdminDetails(newEmail, '', '');
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color(0xFF8D6E63),
+                      ),
+                      child: const Text('Add Email'),
+                    ),
+                  const SizedBox(width: 16),
+                  
+                  ElevatedButton(
                     onPressed: () {
-                      _showChangeDialog('Email', 'Email', _emailController, (newEmail) {
-                        _updateAdminDetails(newEmail, '', '');
+                      _showChangeDialog('Username', 'Username', _usernameController, (newUsername) {
+                        _updateAdminDetails('', newUsername, '');
                       });
                     },
                     style: ElevatedButton.styleFrom(
@@ -181,69 +210,68 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
                       foregroundColor: Colors.white,
                       backgroundColor: const Color(0xFF8D6E63),
                     ),
-                    child: const Text('Change Email'),
+                    child: const Text('Change Username'),
                   ),
-                ),
-              if (!emailSet)
-                Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _showChangeDialog('Email', 'Email', _emailController, (newEmail) {
-                        _updateAdminDetails(newEmail, '', '');
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                      foregroundColor: Colors.white,
-                      backgroundColor: const Color(0xFF8D6E63),
-                    ),
-                    child: const Text('Add Email'),
-                  ),
-                ),
-              const SizedBox(height: 24),
-
-              // Display current username
-              Text(
-                'Username: $currentUsername',
-                style: TextStyle(fontSize: 20),
+                ],
               ),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    _showChangeDialog('Username', 'Username', _usernameController, (newUsername) {
-                      _updateAdminDetails('', newUsername, '');
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                    foregroundColor: Colors.white,
-                    backgroundColor: const Color(0xFF8D6E63),
-                  ),
-                  child: const Text('Change Username'),
-                ),
-              ),
-              const SizedBox(height: 24),
-
               // Change password
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    _showChangeDialog('Password', 'Password', _passwordController, (newPassword) {
-                      _updateAdminDetails('', '', newPassword);
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                    foregroundColor: Colors.white,
-                    backgroundColor: const Color(0xFF8D6E63),
-                  ),
-                  child: const Text('Change Password'),
+              const SizedBox(height: 20),
+              const Text(
+                'Password',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  _showChangeDialog('Password', 'Password', _passwordController, (newPassword) {
+                    _updateAdminDetails('', '', newPassword);
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                  foregroundColor: Colors.white,
+                  backgroundColor: const Color(0xFF8D6E63),
                 ),
+                child: const Text('Change Password'),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailsDisplayRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 2,
+            child: Container(
+              height: 40,
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                value,
+                style: const TextStyle(fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

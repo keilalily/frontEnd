@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:frontend/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/custom_app_bar.dart';
 
@@ -24,7 +25,10 @@ class ScanPaymentScreen extends StatefulWidget {
 class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   double totalPayment = 0.0;
   double paymentInserted = 0.0;
+  bool isLoading = false;
+  bool isUploading = false;
   bool proceedToPaymentClicked = false;
+  String? selectedFolderPath;
   Uint8List? scannedImageData;
 
   @override
@@ -46,7 +50,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   void fetchScannedImage() async {
     try {
       // Replace with your backend URL
-      String apiUrl = 'http://your-backend-url/scan'; // Replace with your actual backend URL
+      String apiUrl = 'http://${AppConfig.ipAddress}/scan'; // Replace with your actual backend URL
 
       // Make POST request to backend
       var response = await http.post(
@@ -241,7 +245,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                 alignment: Alignment.bottomCenter,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    // Add photocopy action here
+                                    _uploadScannedImage();
                                   },
                                   style: ElevatedButton.styleFrom(
                                     textStyle: const TextStyle(fontSize: 20),
@@ -339,5 +343,56 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
     double totalPayment = basePrice * multiplier * resolutionFactor;
 
     return totalPayment;
+  }
+
+  Future<void> _uploadScannedImage() async {
+    if (scannedImageData != null && selectedFolderPath != null) {
+      setState(() {
+        isUploading = true;
+      });
+
+      try {
+        var uri = Uri.parse('http://${AppConfig.ipAddress}:3000/uploadScan');
+        var response = await http.post(uri);
+
+        if (response.statusCode == 200) {
+          var jsonResponse = json.decode(response.body);
+          setState(() {
+            isUploading = false;
+          });
+          print('File uploaded to: ${jsonResponse['filePath']}');
+        } else {
+          setState(() {
+            isUploading = false;
+          });
+          print('Error uploading scanned image: ${response.statusCode}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error uploading scanned image: ${response.statusCode}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          isUploading = false;
+        });
+        print('Error uploading scanned image: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading scanned image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else {
+      print('Scanned image or directory path is null.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Scanned image or directory path is null.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

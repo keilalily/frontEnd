@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/copy_settings_screen.dart';
 import 'package:frontend/print_select_screen.dart';
+import 'package:frontend/scan_select_directory.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/scan_settings_screen.dart';
 import 'package:frontend/print_upload_screen.dart';
@@ -159,12 +160,12 @@ class HomePageState extends State<HomePage> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),
-                                textStyle: const TextStyle(fontSize: 30),
+                                textStyle: const TextStyle(fontSize: 25),
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                                 foregroundColor: Colors.white,
                                 backgroundColor: const Color(0xFF8D6E63),
                               ),
-                              icon: const Icon(Icons.print, size: 70),
+                              icon: const Icon(Icons.print, size: 60),
                               label: const Text('PRINT'),
                             ),
                           ),
@@ -174,19 +175,19 @@ class HomePageState extends State<HomePage> {
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const ScanSettingsScreen()),
+                                  MaterialPageRoute(builder: (context) => const ScanSelectDirectory()),
                                 );
                               },
                               style: ElevatedButton.styleFrom(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),
-                                textStyle: const TextStyle(fontSize: 30),
+                                textStyle: const TextStyle(fontSize: 25),
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                                 foregroundColor: Colors.white,
                                 backgroundColor: const Color(0xFF8D6E63),
                               ),
-                              icon: const Icon(Icons.document_scanner, size: 70),
+                              icon: const Icon(Icons.document_scanner, size: 60),
                               label: const Text('SCAN'),
                             ),
                           ),
@@ -203,12 +204,12 @@ class HomePageState extends State<HomePage> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),
-                                textStyle: const TextStyle(fontSize: 30),
+                                textStyle: const TextStyle(fontSize: 25),
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                                 foregroundColor: Colors.white,
                                 backgroundColor: const Color(0xFF8D6E63),
                               ),
-                              icon: const Icon(Icons.file_copy, size: 70),
+                              icon: const Icon(Icons.file_copy, size: 60),
                               label: const Text('PHOTOCOPY'),
                             ),
                           ),
@@ -223,68 +224,5 @@ class HomePageState extends State<HomePage> {
         ),
       ),
     );
-  }
-}
-
-class OptionButton extends StatefulWidget {
-  final String text;
-  final IconData icon;
-  final VoidCallback onPressed;
-  final double fontSize;
-
-  const OptionButton({
-    super.key,
-    required this.text,
-    required this.icon,
-    required this.onPressed,
-    this.fontSize = 24,
-  });
-
-  @override
-  OptionButtonState createState() => OptionButtonState();
-}
-
-class OptionButtonState extends State<OptionButton> {
-  double _opacity = 1.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onPressed,
-      child: MouseRegion(
-        onEnter: (_) => _setOpacity(0.8),
-        onExit: (_) => _setOpacity(1.0),
-        child: AnimatedOpacity(
-          opacity: _opacity,
-          duration: const Duration(milliseconds: 200),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF8D6E63),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(widget.icon, color: Colors.white),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    widget.text,
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _setOpacity(double opacity) {
-    setState(() {
-      _opacity = opacity;
-    });
   }
 }

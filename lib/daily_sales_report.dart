@@ -19,6 +19,27 @@ class DailySalesReportState extends State<DailySalesReport> {
   String _remainingInkColor = '0%';
   final String _date = DateFormat.yMMMMd().format(DateTime.now());
 
+  // Method to simulate data update (replace with actual data update logic)
+  void updateSalesData() {
+    setState(() {
+      _printSales = '100'; // Example value, replace with actual data
+      _scanSales = '50';   // Example value, replace with actual data
+      _copySales = '20';   // Example value, replace with actual data
+      _totalSales = '170'; // Example value, replace with actual data
+      _remainingPapersLong = '200';
+      _remainingPapersShort = '100';
+      _remainingInkBlack = '30%';
+      _remainingInkColor = '50%';
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Call your data update method here or from your actual data source
+    updateSalesData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -94,17 +115,17 @@ class DailySalesReportState extends State<DailySalesReport> {
             ),
           ),
           const SizedBox(width: 8),
-          SizedBox(
+          Container(
             width: 150,
             height: 40,
-            child: TextFormField(
-              controller: TextEditingController(text: value),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-              ),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Text(
+              value,
               style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-              enabled: false,
             ),
           ),
         ],
