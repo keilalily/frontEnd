@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/widgets.dart';
+import 'package:frontend/config.dart';
 import 'custom_app_bar.dart';
 import 'print_settings_screen.dart';
 import 'package:http/http.dart' as http;
@@ -209,7 +209,7 @@ class UploadUsingFlashdriveScreenState
       });
 
       try {
-        var uri = Uri.parse('http://192.168.100.33:3000/upload');
+        var uri = Uri.parse('http://${AppConfig.ipAddress}:3000/file/upload');
         var request = http.MultipartRequest('POST', uri)
           ..files.add(
             http.MultipartFile.fromBytes(

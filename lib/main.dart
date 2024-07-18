@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/copy_settings_screen.dart';
 import 'package:frontend/print_select_screen.dart';
-import 'package:frontend/scan_select_directory.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/scan_settings_screen.dart';
 import 'package:frontend/print_upload_screen.dart';
@@ -175,7 +174,7 @@ class HomePageState extends State<HomePage> {
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const ScanSelectDirectory()),
+                                  MaterialPageRoute(builder: (context) => const ScanSettingsScreen()),
                                 );
                               },
                               style: ElevatedButton.styleFrom(

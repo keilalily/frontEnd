@@ -23,7 +23,7 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
 
   Future<void> startScan() async {
     // Construct the URL to your Node.js backend endpoint
-    final url = Uri.parse('http://${AppConfig.ipAddress}:3000/scan');
+    final url = Uri.parse('http://${AppConfig.ipAddress}:3000//scan/scan');
 
     try {
       // Send a POST request to start scanning with selected settings
@@ -60,11 +60,11 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Error'),
-          content: Text('Failed to start scanning. Please try again later.'),
+          title: const Text('Error'),
+          content: const Text('Failed to start scanning. Please try again later.'),
           actions: <Widget>[
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -187,9 +187,7 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
                                 onPressed: canProceed ? startScan : null,
                                 style: ElevatedButton.styleFrom(
                                   textStyle: const TextStyle(fontSize: 20),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 50, vertical: 20),
-                                  minimumSize: const Size(100, 30),
+                                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
                                   foregroundColor: Colors.white,
                                   backgroundColor: const Color(0xFF8D6E63),
                                 ),

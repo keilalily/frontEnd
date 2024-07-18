@@ -36,7 +36,7 @@ class PrintUploadScreenState extends State<PrintUploadScreen> {
   Future<void> _uploadFile(BuildContext context) async {
     if (selectedFileName != null && pdfBytes != null) {
       try {
-        var url = Uri.parse('http://${AppConfig.ipAddress}:3000/upload');
+        var url = Uri.parse('http://${AppConfig.ipAddress}:3000/file/upload');
 
         var request = http.MultipartRequest('POST', url)
           ..files.add(

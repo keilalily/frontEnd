@@ -23,7 +23,7 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
       final String password = _passwordController.text;
 
       final response = await http.post(
-        Uri.parse('http://${AppConfig.ipAddress}:3000/login'),
+        Uri.parse('http://${AppConfig.ipAddress}:3000/admin/login'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -39,7 +39,7 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
         // Handle successful login, e.g., save the token
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => AdminSettingsScreen()),
+          MaterialPageRoute(builder: (context) => const AdminSettingsScreen()),
         );
       } else {
         final Map<String, dynamic> error = jsonDecode(response.body);

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/config.dart';
 import 'package:http/http.dart' as http;
@@ -26,10 +25,10 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   double totalPayment = 0.0;
   double paymentInserted = 0.0;
   bool isLoading = false;
-  bool isUploading = false;
+  bool isSending = false;
   bool proceedToPaymentClicked = false;
-  String? selectedFolderPath;
   Uint8List? scannedImageData;
+  String? email;
 
   @override
   void initState() {
@@ -50,7 +49,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   void fetchScannedImage() async {
     try {
       // Replace with your backend URL
-      String apiUrl = 'http://${AppConfig.ipAddress}/scan'; // Replace with your actual backend URL
+      String apiUrl = 'http://${AppConfig.ipAddress}/scan/scan'; // Replace with your actual backend URL
 
       // Make POST request to backend
       var response = await http.post(
@@ -245,7 +244,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                 alignment: Alignment.bottomCenter,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    _uploadScannedImage();
+                                    _showEmailDialog();
                                   },
                                   style: ElevatedButton.styleFrom(
                                     textStyle: const TextStyle(fontSize: 20),
@@ -346,53 +345,89 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   }
 
   Future<void> _uploadScannedImage() async {
-    if (scannedImageData != null && selectedFolderPath != null) {
+    if (scannedImageData != null && email != null) {
       setState(() {
-        isUploading = true;
+        isSending = true;
       });
 
       try {
-        var uri = Uri.parse('http://${AppConfig.ipAddress}:3000/uploadScan');
-        var response = await http.post(uri);
+        var uri = Uri.parse('http://${AppConfig.ipAddress}:3000/scan/sendScannedFile');
+        var response = await http.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': email,
+            'imageData': base64Encode(scannedImageData!), // Encode image data to base64
+          }),
+        );
 
         if (response.statusCode == 200) {
           var jsonResponse = json.decode(response.body);
           setState(() {
-            isUploading = false;
+            isSending = false;
           });
-          print('File uploaded to: ${jsonResponse['filePath']}');
+          print('File sent to: ${jsonResponse['email']}');
         } else {
           setState(() {
-            isUploading = false;
+            isSending = false;
           });
-          print('Error uploading scanned image: ${response.statusCode}');
+          print('Error sending scanned image: ${response.statusCode}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error uploading scanned image: ${response.statusCode}'),
+              content: Text('Error sending scanned image: ${response.statusCode}'),
               backgroundColor: Colors.red,
             ),
           );
         }
       } catch (e) {
         setState(() {
-          isUploading = false;
+          isSending = false;
         });
-        print('Error uploading scanned image: $e');
+        print('Error sending scanned image: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error uploading scanned image: $e'),
+            content: Text('Error sending scanned image: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
     } else {
-      print('Scanned image or directory path is null.');
+      print('Scanned image or email is null.');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Scanned image or directory path is null.'),
+          content: Text('Scanned image or email is null.'),
           backgroundColor: Colors.red,
         ),
       );
     }
+  }
+
+  Future<void> _showEmailDialog() async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enter Email'),
+          content: TextField(
+            onChanged: (value) {
+              setState(() {
+                email = value.trim();
+              });
+            },
+            decoration: const InputDecoration(
+              hintText: 'Enter your email',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                _uploadScannedImage();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

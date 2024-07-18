@@ -29,12 +29,13 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
   void _fetchAdminDetails() async {
     // Fetch admin details from backend
     try {
-      final response = await http.get(Uri.parse('http://${AppConfig.ipAddress}:3000/getAdminDetails'));
+      final response = await http.get(Uri.parse('http://${AppConfig.ipAddress}:3000/admin/getAdminDetails'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           currentEmail = data['email'];
           currentUsername = data['username'];
+          currentPassword = data['password'];
           emailSet = currentEmail.isNotEmpty;
         });
       } else {
@@ -49,12 +50,12 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
     // Update admin details in backend
     try {
       final response = await http.post(
-        Uri.parse('http://${AppConfig.ipAddress}:3000/updateAdminDetails'),
+        Uri.parse('http://${AppConfig.ipAddress}:3000/admin/updateAdminDetails'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': newEmail,
-          'username': newUsername,
-          'password': newPassword,
+          'email': newEmail.isNotEmpty ? newEmail : currentEmail,
+          'username': newUsername.isNotEmpty ? newUsername : currentUsername,
+          'password': newPassword.isNotEmpty ? newPassword : currentPassword,
           'currentPassword': currentPassword,
         }),
       );
@@ -63,10 +64,11 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
         setState(() {
           currentEmail = data['email'];
           currentUsername = data['username'];
+          currentPassword = newPassword.isNotEmpty ? newPassword : currentPassword;
           emailSet = currentEmail.isNotEmpty;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Details updated successfully')),
+          const SnackBar(content: Text('Details updated successfully')),
         );
       } else {
         print('Failed to update admin details: ${response.statusCode}');
@@ -76,7 +78,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
     }
   }
 
-  void _showChangeDialog(String title, String labelText, TextEditingController controller, Function(String) updateFunction) {
+  void _showChangeDetailsDialog(String title, String labelText, TextEditingController controller, Function(String) updateFunction) {
     final TextEditingController _currentPasswordController = TextEditingController();
 
     showDialog(
@@ -88,7 +90,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
             children: [
               Text('Change $title'),
               IconButton(
-                icon: Icon(Icons.close),
+                icon: const Icon(Icons.close),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
@@ -104,20 +106,87 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
                   labelText: 'New $labelText',
                 ),
               ),
-              if (emailSet) // Only show password confirmation if email is already set
-                TextField(
-                  controller: _currentPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                  ),
+              TextField(
+                controller: _currentPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm Password',
                 ),
+              ),
             ],
           ),
           actions: [
             ElevatedButton(
               onPressed: () {
-                if (!emailSet || _currentPasswordController.text == currentPassword) {
+                if (_currentPasswordController.text == currentPassword) {
+                  updateFunction(controller.text);
+                  Navigator.of(context).pop();
+                } else {
+                  print('Incorrect current password');
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFF8D6E63),
+              ),
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showChangePasswordDialog(TextEditingController controller, Function(String) updateFunction) {
+    final TextEditingController _currentPasswordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Change Password'),
+              const SizedBox(width: 10),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'Current Password',
+                ),
+              ),
+              TextField(
+                controller: _currentPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'New Password',
+                ),
+              ),
+              TextField(
+                controller: _currentPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm New Password',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                if (_currentPasswordController.text == currentPassword) {
                   updateFunction(controller.text);
                   Navigator.of(context).pop();
                 } else {
@@ -172,7 +241,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
                   if (emailSet)
                     ElevatedButton(
                       onPressed: () {
-                        _showChangeDialog('Email', 'Email', _emailController, (newEmail) {
+                        _showChangeDetailsDialog('Email', 'Email', _emailController, (newEmail) {
                           _updateAdminDetails(newEmail, '', '');
                         });
                       },
@@ -186,7 +255,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
                   if (!emailSet)
                     ElevatedButton(
                       onPressed: () {
-                        _showChangeDialog('Email', 'Email', _emailController, (newEmail) {
+                        _showChangeDetailsDialog('Email', 'Email', _emailController, (newEmail) {
                           _updateAdminDetails(newEmail, '', '');
                         });
                       },
@@ -201,7 +270,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
                   
                   ElevatedButton(
                     onPressed: () {
-                      _showChangeDialog('Username', 'Username', _usernameController, (newUsername) {
+                      _showChangeDetailsDialog('Username', 'Username', _usernameController, (newUsername) {
                         _updateAdminDetails('', newUsername, '');
                       });
                     },
@@ -223,7 +292,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  _showChangeDialog('Password', 'Password', _passwordController, (newPassword) {
+                  _showChangePasswordDialog(_passwordController, (newPassword) {
                     _updateAdminDetails('', '', newPassword);
                   });
                 },

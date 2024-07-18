@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class DailySalesReport extends StatefulWidget {
@@ -18,6 +19,18 @@ class DailySalesReportState extends State<DailySalesReport> {
   String _remainingInkBlack = '0%';
   String _remainingInkColor = '0%';
   final String _date = DateFormat.yMMMMd().format(DateTime.now());
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _longBondStockController = TextEditingController();
+  final TextEditingController _shortBondStockController = TextEditingController();
+  final TextEditingController _inkBlackStockController = TextEditingController();
+  final TextEditingController _inkColorStockController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    updateSalesData();
+  }
 
   // Method to simulate data update (replace with actual data update logic)
   void updateSalesData() {
@@ -26,18 +39,83 @@ class DailySalesReportState extends State<DailySalesReport> {
       _scanSales = '50';   // Example value, replace with actual data
       _copySales = '20';   // Example value, replace with actual data
       _totalSales = '170'; // Example value, replace with actual data
-      _remainingPapersLong = '200';
-      _remainingPapersShort = '100';
-      _remainingInkBlack = '30%';
-      _remainingInkColor = '50%';
     });
   }
 
+  void updateInventoryData() {
+    setState(() {
+      _remainingPapersLong = _longBondStockController.text;
+      _remainingPapersShort = _shortBondStockController.text;
+      _remainingInkBlack = _inkBlackStockController.text;
+      _remainingInkColor = _inkColorStockController.text;
+    });
+
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pricing settings saved successfully')),
+    );
+  }
+
   @override
-  void initState() {
-    super.initState();
-    // Call your data update method here or from your actual data source
-    updateSalesData();
+  void dispose() {
+    _longBondStockController.dispose();
+    _shortBondStockController.dispose();
+    _inkBlackStockController.dispose();
+    _inkColorStockController.dispose();
+    super.dispose();
+  }
+
+  void _showEditDialog() {
+    // Initialize controllers with current values
+    _longBondStockController.text = _remainingPapersLong;
+    _shortBondStockController.text = _remainingPapersShort;
+    _inkBlackStockController.text = _remainingInkBlack;
+    _inkColorStockController.text = _remainingInkColor;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Edit Inventory'),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  _buildInventoryRow('Long Bond Paper', _longBondStockController),
+                  _buildInventoryRow('Short Bond Paper', _shortBondStockController),
+                  _buildInventoryRow('Black Ink', _inkBlackStockController),
+                  _buildInventoryRow('Colored Ink', _inkColorStockController)
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              onPressed: updateInventoryData,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFF8D6E63),
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -75,7 +153,7 @@ class DailySalesReportState extends State<DailySalesReport> {
                 const SizedBox(width: 100),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    // crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Printer Status',
@@ -91,6 +169,18 @@ class DailySalesReportState extends State<DailySalesReport> {
                       const SizedBox(height: 8.0),
                       _buildStatusRow('Black', _remainingInkBlack),
                       _buildStatusRow('Color', _remainingInkColor),
+                      const SizedBox(height: 8.0),
+                      ElevatedButton(
+                        onPressed: () {
+                            _showEditDialog();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0xFF8D6E63),
+                        ),
+                        child: const Text('Edit Inventory'),
+                      ),
                     ],
                   ),
                 ),
@@ -126,6 +216,51 @@ class DailySalesReportState extends State<DailySalesReport> {
             child: Text(
               value,
               style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInventoryRow(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 100,
+            height: 40,
+            child: TextFormField(
+              controller: controller,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly
+              ],
+              style: const TextStyle(
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a price';
+                }
+                if (double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
+              },
             ),
           ),
         ],
