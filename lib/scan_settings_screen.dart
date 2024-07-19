@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/config.dart';
 import 'package:http/http.dart' as http;
-
 import 'scan_payment_screen.dart';
 import 'custom_app_bar.dart';
 import 'custom_button_row.dart';

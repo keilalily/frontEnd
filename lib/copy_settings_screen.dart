@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/config.dart';
 import 'package:frontend/copy_payment_screen.dart';
 import 'package:frontend/custom_app_bar.dart';
 import 'package:frontend/custom_button_row.dart';
+import 'package:http/http.dart' as http;
 
 class CopySettingsScreen extends StatefulWidget {
   const CopySettingsScreen({super.key});
@@ -18,6 +20,61 @@ class CopySettingsScreenState extends State<CopySettingsScreen> {
 
   bool get canProceed => _paperSizeIndex != -1 && _colorIndex != -1 &&
       _resolutionIndex != -1 && _copies > 0;
+
+  Future<void> startScan() async {
+    // Construct the URL to your Node.js backend endpoint
+    final url = Uri.parse('http://${AppConfig.ipAddress}:3000//scan/scan');
+
+    try {
+      // Send a POST request to start scanning with selected settings
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: {
+          'paperSizeIndex': _paperSizeIndex,
+          'colorIndex': _colorIndex,
+          'resolutionIndex': _resolutionIndex,
+        },
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        // Navigate to ScanPaymentScreen with selected settings
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CopyPaymentScreen(
+              paperSizeIndex: _paperSizeIndex,
+              colorIndex: _colorIndex,
+              resolutionIndex: _resolutionIndex,
+              copies: _copies
+            ),
+          ),
+        );
+      } else {
+        // Handle error if the request fails
+        throw Exception('Failed to start scanning: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      // Handle network or server errors
+      print('Error starting scan: $e');
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text('Failed to start scanning. Please try again later.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,19 +198,7 @@ class CopySettingsScreenState extends State<CopySettingsScreen> {
                             const SizedBox(height: 16),
                             Center(
                               child: ElevatedButton(
-                                onPressed: canProceed ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CopyPaymentScreen(
-                                        paperSizeIndex: _paperSizeIndex,
-                                        colorIndex: _colorIndex,
-                                        resolutionIndex: _resolutionIndex,
-                                        copies: _copies,
-                                      ),
-                                    ),
-                                  );
-                                } : null,
+                                onPressed: canProceed ? startScan : null,
                                 style: ElevatedButton.styleFrom(
                                     textStyle: const TextStyle(fontSize: 20),
                                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
@@ -162,7 +207,7 @@ class CopySettingsScreenState extends State<CopySettingsScreen> {
                                     backgroundColor: const Color(0xFF8D6E63),
                                 ),
                                 child: const Text(
-                                  "PROCEED",
+                                  "SCAN",
                                 ),
                               ),
                             ),

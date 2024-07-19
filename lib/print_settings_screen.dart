@@ -282,7 +282,6 @@ class PrintSettingsScreenState extends State<PrintSettingsScreen> {
                               style: ElevatedButton.styleFrom(
                                 textStyle: const TextStyle(fontSize: 20),
                                 padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                                minimumSize: const Size(100, 30),
                                 foregroundColor: Colors.white,
                                 backgroundColor: const Color(0xFF8D6E63),
                               ),

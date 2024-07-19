@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/config.dart';
+import 'package:frontend/payment_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/custom_app_bar.dart';
 
@@ -29,12 +30,20 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   bool proceedToPaymentClicked = false;
   Uint8List? scannedImageData;
   String? email;
+  late PaymentService paymentService;
 
   @override
   void initState() {
     super.initState();
     fetchTotalPayment();
     fetchScannedImage();
+
+    paymentService = PaymentService(AppConfig.ipAddress);
+    paymentService.listenToPaymentUpdates((amount) {
+      setState(() {
+        paymentInserted = amount;
+      });
+    });
   }
 
   void fetchTotalPayment() {
@@ -48,8 +57,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
 
   void fetchScannedImage() async {
     try {
-      // Replace with your backend URL
-      String apiUrl = 'http://${AppConfig.ipAddress}/scan/scan'; // Replace with your actual backend URL
+      String apiUrl = 'http://${AppConfig.ipAddress}/scan/scan';
 
       // Make POST request to backend
       var response = await http.post(
@@ -85,10 +93,10 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
     }
   }
 
-  void updatePaymentInserted(double amount) {
-    setState(() {
-      paymentInserted += amount; // Update payment inserted
-    });
+  @override
+  void dispose() {
+    paymentService.close();
+    super.dispose();
   }
 
   @override
@@ -208,6 +216,27 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                                   color: Color(0xFF2B2E4A),
                                                 ),
                                               ),
+                                              const SizedBox(height: 16),
+                                              paymentInserted >= totalPayment
+                                                  ? ElevatedButton(
+                                                      onPressed: _showEmailDialog,
+                                                      style: ElevatedButton.styleFrom(
+                                                        foregroundColor: Colors.white,
+                                                        backgroundColor: const Color(0xFF2B2E4A),
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(8.0),
+                                                        ),
+                                                        padding: const EdgeInsets.symmetric(
+                                                          horizontal: 32.0,
+                                                          vertical: 16.0,
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        'UPLOAD',
+                                                        style: TextStyle(fontSize: 20.0),
+                                                      ),
+                                                    )
+                                                  : const CircularProgressIndicator(),
                                             ],
                                           )
                                         : ElevatedButton(
@@ -215,14 +244,10 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
                                               });
-                                              // Call your backend to handle payment insertion
-                                              // For demonstration, simulate payment insertion
-                                              updatePaymentInserted(50.0); // Simulate an initial payment of 50
                                             },
                                             style: ElevatedButton.styleFrom(
                                               textStyle: const TextStyle(fontSize: 20),
                                               padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                                              minimumSize: const Size(100, 50),
                                               foregroundColor: Colors.white,
                                               backgroundColor: const Color(0xFF8D6E63),
                                             ),
@@ -238,30 +263,6 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            if (paymentInserted >= totalPayment)
-                              Align(
-                                alignment: Alignment.bottomCenter,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    _showEmailDialog();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    textStyle: const TextStyle(fontSize: 20),
-                                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                                    minimumSize: const Size(100, 50),
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: const Color(0xFF8D6E63),
-                                  ),
-                                  child: const Text(
-                                    'UPLOAD',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:frontend/config.dart';
 import 'package:frontend/custom_app_bar.dart';
 import 'package:pdfx/pdfx.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as status;
+import 'package:http/http.dart' as http;
+import 'payment_service.dart';
 
 class PrintPaymentScreen extends StatefulWidget {
   final String fileName;
@@ -40,10 +40,7 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   late PdfController pdfController;
   int currentPageIndex = 0;
   int currentPage = 1;
-
-  final WebSocketChannel channel = WebSocketChannel.connect(
-    Uri.parse('ws://${AppConfig.ipAddress}:3000'),
-  );
+  late PaymentService paymentService;
 
   @override
   void initState() {
@@ -54,10 +51,10 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
       initialPage: widget.pagesIndex == 1 ? widget.selectedPages[0] : currentPage,
     );
 
-    channel.stream.listen((message) {
-      final data = jsonDecode(message);
+    paymentService = PaymentService(AppConfig.ipAddress);
+    paymentService.listenToPaymentUpdates((amount) {
       setState(() {
-        paymentInserted = data['amountInserted'].toDouble();
+        paymentInserted = amount;
       });
     });
   }
@@ -123,8 +120,45 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   @override
   void dispose() {
     pdfController.dispose();
-    channel.sink.close(status.goingAway);
+    paymentService.close();
     super.dispose();
+  }
+
+  Future<void> printDocument() async {
+    // Prepare print settings payload
+    Map<String, dynamic> printSettings = {
+      'pdfPath': '', // Fill this with the actual path received from the server after upload
+      'paperSizeIndex': widget.paperSizeIndex,
+      'colorIndex': widget.colorIndex,
+      'pagesIndex': widget.pagesIndex,
+      'selectedPages': widget.selectedPages,
+      'copies': widget.copies,
+    };
+
+    // Send POST request to backend /print endpoint
+    try {
+      final response = await http.post(
+        Uri.parse('http://${AppConfig.ipAddress}:3000/print/print'), // Replace with your backend URL
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(printSettings),
+      );
+
+      if (response.statusCode == 200) {
+        // Handle success response
+        print('Printing successful');
+        // Optionally, handle UI updates or success messages
+      } else {
+        // Handle error response
+        print('Failed to print: ${response.reasonPhrase}');
+        // Optionally, show error message to user
+      }
+    } catch (e) {
+      // Handle network or server-side error
+      print('Error printing document: $e');
+      // Optionally, show error message to user
+    }
   }
 
   @override
@@ -242,11 +276,11 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                                     Text(
                                       '₱${totalPayment.toStringAsFixed(2)}',
                                       style: const TextStyle(
-                                        fontSize: 20,
+                                        fontSize: 18,
                                         color: Color(0xFF2B2E4A),
                                       ),
                                     ),
-                                    const SizedBox(height: 16),
+                                    const SizedBox(height: 8),
                                     proceedToPaymentClicked
                                         ? Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,10 +297,31 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                                               Text(
                                                 '₱${paymentInserted.toStringAsFixed(2)}',
                                                 style: const TextStyle(
-                                                  fontSize: 20,
+                                                  fontSize: 18,
                                                   color: Color(0xFF2B2E4A),
                                                 ),
                                               ),
+                                              const SizedBox(height: 16),
+                                              paymentInserted >= totalPayment
+                                                  ? ElevatedButton(
+                                                      onPressed: printDocument,
+                                                      style: ElevatedButton.styleFrom(
+                                                        foregroundColor: Colors.white,
+                                                        backgroundColor: const Color(0xFF2B2E4A),
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(8.0),
+                                                        ),
+                                                        padding: const EdgeInsets.symmetric(
+                                                          horizontal: 32.0,
+                                                          vertical: 16.0,
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        'PRINT',
+                                                        style: TextStyle(fontSize: 20.0),
+                                                      ),
+                                                    )
+                                                  : const CircularProgressIndicator(),
                                             ],
                                           )
                                         : ElevatedButton(
@@ -278,46 +333,18 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                                             style: ElevatedButton.styleFrom(
                                               textStyle: const TextStyle(fontSize: 20),
                                               padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                                              minimumSize: const Size(100, 50),
                                               foregroundColor: Colors.white,
                                               backgroundColor: const Color(0xFF8D6E63),
                                             ),
                                             child: const Text(
                                               'PROCEED TO PAYMENT',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.white,
-                                              ),
+                                              style: TextStyle(fontSize: 20.0),
                                             ),
                                           ),
                                   ],
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            if (paymentInserted >= totalPayment)
-                              Align(
-                                alignment: Alignment.bottomCenter,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    // Add print action here
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    textStyle: const TextStyle(fontSize: 20),
-                                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                                    minimumSize: const Size(100, 50),
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: const Color(0xFF8D6E63),
-                                  ),
-                                  child: const Text(
-                                    'PRINT',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),
@@ -335,19 +362,13 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 18, color: Color(0xFF2B2E4A)),
-              overflow: TextOverflow.ellipsis,
-            ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16, color: Color(0xFF2B2E4A)),
           ),
-          Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 18, color: Color(0xFF2B2E4A)),
-              overflow: TextOverflow.ellipsis,
-            ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16, color: Color(0xFF2B2E4A)),
           ),
         ],
       ),
@@ -355,32 +376,53 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   }
 
   String getPaperSize() {
-    return widget.paperSizeIndex == 0 ? 'Letter (8.5" x 11")' : 'Legal (8.5" x 13")';
+    switch (widget.paperSizeIndex) {
+      case 0:
+        return 'Short';
+      case 1:
+        return 'Long';
+      default:
+        return '';
+    }
   }
 
   String getColor() {
-    return widget.colorIndex == 0 ? 'Colored' : 'Grayscale';
+    switch (widget.colorIndex) {
+      case 0:
+        return 'Grayscale';
+      case 1:
+        return 'Colored';
+      default:
+        return '';
+    }
   }
 
   String getPages() {
-    if (widget.pagesIndex == 0) {
-      return 'All Pages';
-    } else {
-      return widget.selectedPages.join(', ');
+    switch (widget.pagesIndex) {
+      case 0:
+        return 'All Pages';
+      case 1:
+        return 'Selected Pages';
+      default:
+        return '';
     }
   }
 
   double calculateTotalPayment() {
-    double basePrice = 1.0;
-    double multiplier = 1.0;
+    const double shortBondPriceColored = 5.0;
+    const double longBondPriceColored = 10.0;
+    const double shortBondPriceGrayscale = 2.0;
+    const double longBondPriceGrayscale = 5.0;
+
+    double pricePerPage = 0.0;
 
     if (widget.colorIndex == 1) {
-      multiplier = 0.5;
+      pricePerPage = widget.paperSizeIndex == 0 ? shortBondPriceColored : longBondPriceColored;
+    } else {
+      pricePerPage = widget.paperSizeIndex == 0 ? shortBondPriceGrayscale : longBondPriceGrayscale;
     }
 
-    int totalPages = widget.pagesIndex == 0 ? widget.pageCount : widget.selectedPages.length;
-    double totalPayment = totalPages * basePrice * multiplier * widget.copies;
-
-    return totalPayment;
+    int totalPageCount = widget.pagesIndex == 0 ? widget.pageCount : widget.selectedPages.length;
+    return pricePerPage * totalPageCount * widget.copies;
   }
 }
