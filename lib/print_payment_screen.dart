@@ -6,6 +6,7 @@ import 'package:frontend/custom_app_bar.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:http/http.dart' as http;
 import 'payment_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PrintPaymentScreen extends StatefulWidget {
   final String fileName;
@@ -45,7 +46,6 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   @override
   void initState() {
     super.initState();
-    fetchTotalPayment();
     pdfController = PdfController(
       document: PdfDocument.openData(widget.pdfBytes),
       initialPage: widget.pagesIndex == 1 ? widget.selectedPages[0] : currentPage,
@@ -57,14 +57,52 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
         paymentInserted = amount;
       });
     });
+
+    _fetchTotalPayment();
   }
 
-  void fetchTotalPayment() {
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        totalPayment = calculateTotalPayment();
-      });
+  Future<void> _fetchTotalPayment() async {
+    double calculatedTotal = await calculateTotalPayment(
+      widget.colorIndex,
+      widget.paperSizeIndex,
+      widget.pagesIndex,
+      widget.pageCount,
+      widget.selectedPages,
+      widget.copies,
+    );
+    setState(() {
+      totalPayment = calculatedTotal;
     });
+  }
+
+  Future<Map<String, double>> getPricing() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'longBondPriceColored': double.tryParse(prefs.getString('longBondPrice') ?? '0') ?? 0,
+      'shortBondPriceColored': double.tryParse(prefs.getString('shortBondPrice') ?? '0') ?? 0,
+      'longBondPriceGrayscale': double.tryParse(prefs.getString('coloredPrice') ?? '0') ?? 0,
+      'shortBondPriceGrayscale': double.tryParse(prefs.getString('grayscalePrice') ?? '0') ?? 0,
+    };
+  }
+
+  Future<double> calculateTotalPayment(int colorIndex, int paperSizeIndex, int pagesIndex, int pageCount, List<int> selectedPages, int copies) async {
+    final pricing = await getPricing();
+
+    double shortBondPriceColored = pricing['shortBondPriceColored'] ?? 0;
+    double longBondPriceColored = pricing['longBondPriceColored'] ?? 0;
+    double shortBondPriceGrayscale = pricing['shortBondPriceGrayscale'] ?? 0;
+    double longBondPriceGrayscale = pricing['longBondPriceGrayscale'] ?? 0;
+
+    double pricePerPage = 0.0;
+
+    if (colorIndex == 1) {
+      pricePerPage = paperSizeIndex == 0 ? shortBondPriceColored : longBondPriceColored;
+    } else {
+      pricePerPage = paperSizeIndex == 0 ? shortBondPriceGrayscale : longBondPriceGrayscale;
+    }
+
+    int totalPageCount = pagesIndex == 0 ? pageCount : selectedPages.length;
+    return pricePerPage * totalPageCount * copies;
   }
 
   void _previousPage() {
@@ -406,23 +444,5 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
       default:
         return '';
     }
-  }
-
-  double calculateTotalPayment() {
-    const double shortBondPriceColored = 5.0;
-    const double longBondPriceColored = 10.0;
-    const double shortBondPriceGrayscale = 2.0;
-    const double longBondPriceGrayscale = 5.0;
-
-    double pricePerPage = 0.0;
-
-    if (widget.colorIndex == 1) {
-      pricePerPage = widget.paperSizeIndex == 0 ? shortBondPriceColored : longBondPriceColored;
-    } else {
-      pricePerPage = widget.paperSizeIndex == 0 ? shortBondPriceGrayscale : longBondPriceGrayscale;
-    }
-
-    int totalPageCount = widget.pagesIndex == 0 ? widget.pageCount : widget.selectedPages.length;
-    return pricePerPage * totalPageCount * widget.copies;
   }
 }
