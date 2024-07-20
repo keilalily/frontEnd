@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/config.dart';
+import 'package:frontend/pricing_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class PricingSettings extends StatefulWidget {
   const PricingSettings({super.key});
@@ -10,6 +13,7 @@ class PricingSettings extends StatefulWidget {
 }
 
 class PricingSettingsState extends State<PricingSettings> {
+  final PricingService _pricingService = PricingService();
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _longBondPriceController = TextEditingController();
@@ -47,50 +51,70 @@ class PricingSettingsState extends State<PricingSettings> {
   }
 
   Future<void> _loadPricing() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _longBondPrice = prefs.getString('longBondPrice') ?? '';
-      _shortBondPrice = prefs.getString('shortBondPrice') ?? '';
-      _coloredPrice = prefs.getString('coloredPrice') ?? '';
-      _grayscalePrice = prefs.getString('grayscalePrice') ?? '';
-      _highResolutionPrice = prefs.getString('highResolutionPrice') ?? '';
-      _mediumResolutionPrice = prefs.getString('mediumResolutionPrice') ?? '';
-      _lowResolutionPrice = prefs.getString('lowResolutionPrice') ?? '';
-      _longBondPriceController.text = _longBondPrice;
-      _shortBondPriceController.text = _shortBondPrice;
-      _coloredPriceController.text = _coloredPrice;
-      _grayscalePriceController.text = _grayscalePrice;
-      _highResolutionPriceController.text = _highResolutionPrice;
-      _mediumResolutionPriceController.text = _mediumResolutionPrice;
-      _lowResolutionPriceController.text = _lowResolutionPrice;
-    });
+    try {
+      final pricingData = await _pricingService.fetchPricingData();
+      setState(() {
+        _longBondPrice = pricingData['longBondPrice'] ?? '';
+        _shortBondPrice = pricingData['shortBondPrice'] ?? '';
+        _coloredPrice = pricingData['coloredPrice'] ?? '';
+        _grayscalePrice = pricingData['grayscalePrice'] ?? '';
+        _highResolutionPrice = pricingData['highResolutionPrice'] ?? '';
+        _mediumResolutionPrice = pricingData['mediumResolutionPrice'] ?? '';
+        _lowResolutionPrice = pricingData['lowResolutionPrice'] ?? '';
+        _longBondPriceController.text = _longBondPrice;
+        _shortBondPriceController.text = _shortBondPrice;
+        _coloredPriceController.text = _coloredPrice;
+        _grayscalePriceController.text = _grayscalePrice;
+        _highResolutionPriceController.text = _highResolutionPrice;
+        _mediumResolutionPriceController.text = _mediumResolutionPrice;
+        _lowResolutionPriceController.text = _lowResolutionPrice;
+      });
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load pricing data')),
+      );
+    }
   }
 
   Future<void> _savePricing() async {
     if (_formKey.currentState!.validate()) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('longBondPrice', _longBondPriceController.text);
-      await prefs.setString('shortBondPrice', _shortBondPriceController.text);
-      await prefs.setString('coloredPrice', _coloredPriceController.text);
-      await prefs.setString('grayscalePrice', _grayscalePriceController.text);
-      await prefs.setString('highResolutionPrice', _highResolutionPriceController.text);
-      await prefs.setString('mediumResolutionPrice', _mediumResolutionPriceController.text);
-      await prefs.setString('lowResolutionPrice', _lowResolutionPriceController.text);
+      final pricing = {
+        'longBondPrice': _longBondPriceController.text,
+        'shortBondPrice': _shortBondPriceController.text,
+        'coloredPrice': _coloredPriceController.text,
+        'grayscalePrice': _grayscalePriceController.text,
+        'highResolutionPrice': _highResolutionPriceController.text,
+        'mediumResolutionPrice': _mediumResolutionPriceController.text,
+        'lowResolutionPrice': _lowResolutionPriceController.text,
+      };
 
-      setState(() {
-        _longBondPrice = _longBondPriceController.text;
-        _shortBondPrice = _shortBondPriceController.text;
-        _coloredPrice = _coloredPriceController.text;
-        _grayscalePrice = _grayscalePriceController.text;
-        _highResolutionPrice = _highResolutionPriceController.text;
-        _mediumResolutionPrice = _mediumResolutionPriceController.text;
-        _lowResolutionPrice = _lowResolutionPriceController.text;
-      });
-
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pricing settings saved successfully')),
+      final response = await http.post(
+        Uri.parse('http://${AppConfig.ipAddress}:3000/pricing/prices'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(pricing),
       );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _longBondPrice = _longBondPriceController.text;
+          _shortBondPrice = _shortBondPriceController.text;
+          _coloredPrice = _coloredPriceController.text;
+          _grayscalePrice = _grayscalePriceController.text;
+          _highResolutionPrice = _highResolutionPriceController.text;
+          _mediumResolutionPrice = _mediumResolutionPriceController.text;
+          _lowResolutionPrice = _lowResolutionPriceController.text;
+        });
+
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pricing settings saved successfully')),
+        );
+      } else {
+        // Handle error
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save pricing data')),
+        );
+      }
     }
   }
 

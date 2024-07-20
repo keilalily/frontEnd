@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frontend/config.dart';
 import 'package:frontend/payment_service.dart';
+import 'package:frontend/pricing_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/custom_app_bar.dart';
 
@@ -31,11 +32,11 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   Uint8List? scannedImageData;
   String? email;
   late PaymentService paymentService;
+  late PricingService pricingService;
 
   @override
   void initState() {
     super.initState();
-    fetchTotalPayment();
     fetchScannedImage();
 
     paymentService = PaymentService(AppConfig.ipAddress);
@@ -44,15 +45,72 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
         paymentInserted = amount;
       });
     });
+
+    pricingService = PricingService();
+
+    _fetchTotalPayment().catchError((e) {
+      print('Error fetching total payment: $e');
+    });
   }
 
-  void fetchTotalPayment() {
-    // Simulate fetching total payment
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        totalPayment = calculateTotalPayment();
-      });
+  Future<void> _fetchTotalPayment() async {
+    double calculatedTotal = await calculateTotalPayment(
+      widget.colorIndex,
+      widget.resolutionIndex
+    );
+    setState(() {
+      totalPayment = calculatedTotal;
     });
+  }
+
+  Future<Map<String, double>> getPricing() async {
+    try {
+      final pricing = await pricingService.fetchPricingData();
+      return {
+        'coloredPrice': double.tryParse(pricing['coloredPrice'] ?? '0') ?? 0,
+        'grayscalePrice': double.tryParse(pricing['grayscalePrice'] ?? '0') ?? 0,
+        'highResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
+        'mediumResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
+        'lowResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
+      };
+    } catch (e) {
+      print('Error fetching pricing data: $e');
+      return {
+        'coloredPrice': 0,
+        'grayscalePrice': 0,
+        'highResolutionPrice': 0,
+        'mediumResolutionPrice': 0,
+        'lowResolutionPrice': 0,
+      };
+    }
+  }
+
+  Future<double> calculateTotalPayment(int colorIndex, int resolutionIndex) async {
+    final pricing = await getPricing();
+
+    double coloredPrice = pricing['coloredPrice'] ?? 0;
+    double grayscalePrice = pricing['grayscalePrice'] ?? 0;
+    double highResolutionPrice = pricing['highResolutionPrice'] ?? 0;
+    double mediumResolutionPrice = pricing['mediumResolutionPrice'] ?? 0;
+    double lowResolutionPrice = pricing['lowResolutionPrice'] ?? 0;
+
+    double price = 0.0;
+
+    switch (resolutionIndex) {
+      case 0:
+        price = colorIndex == 0 ? (grayscalePrice + lowResolutionPrice): (coloredPrice + lowResolutionPrice);
+        break;
+      case 1:
+        price = colorIndex == 0 ? (grayscalePrice + lowResolutionPrice): (coloredPrice + mediumResolutionPrice);
+        break;
+      case 2:
+        price = colorIndex == 0 ? (grayscalePrice + lowResolutionPrice): (coloredPrice + highResolutionPrice);
+        break;
+      default:
+        break;
+    }
+
+    return price;
   }
 
   void fetchScannedImage() async {
@@ -318,31 +376,6 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
       default:
         return '';
     }
-  }
-
-  double calculateTotalPayment() {
-    double basePrice = 1.0;
-    double multiplier = 1.0;
-    double resolutionFactor = 1.0;
-
-    if (widget.colorIndex == 1) {
-      multiplier = 0.5;
-    }
-
-    switch (widget.resolutionIndex) {
-      case 0:
-        resolutionFactor = 1.5;
-        break;
-      case 2:
-        resolutionFactor = 0.5;
-        break;
-      default:
-        break;
-    }
-
-    double totalPayment = basePrice * multiplier * resolutionFactor;
-
-    return totalPayment;
   }
 
   Future<void> _uploadScannedImage() async {

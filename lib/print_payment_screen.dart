@@ -6,7 +6,7 @@ import 'package:frontend/custom_app_bar.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:http/http.dart' as http;
 import 'payment_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'pricing_service.dart';
 
 class PrintPaymentScreen extends StatefulWidget {
   final String fileName;
@@ -38,18 +38,23 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   double totalPayment = 0.0;
   double paymentInserted = 0.0;
   bool proceedToPaymentClicked = false;
-  late PdfController pdfController;
   int currentPageIndex = 0;
   int currentPage = 1;
+  late PdfController pdfController;
   late PaymentService paymentService;
+  late PricingService pricingService;
 
   @override
   void initState() {
     super.initState();
-    pdfController = PdfController(
-      document: PdfDocument.openData(widget.pdfBytes),
-      initialPage: widget.pagesIndex == 1 ? widget.selectedPages[0] : currentPage,
-    );
+    try {
+      pdfController = PdfController(
+        document: PdfDocument.openData(widget.pdfBytes),
+        initialPage: widget.pagesIndex == 1 ? widget.selectedPages[0] : currentPage,
+      );
+    } catch (e) {
+      print('Error initializing PDF Controller: $e');
+    }
 
     paymentService = PaymentService(AppConfig.ipAddress);
     paymentService.listenToPaymentUpdates((amount) {
@@ -58,7 +63,11 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
       });
     });
 
-    _fetchTotalPayment();
+    pricingService = PricingService();
+
+    _fetchTotalPayment().catchError((e) {
+      print('Error fetching total payment: $e');
+    });
   }
 
   Future<void> _fetchTotalPayment() async {
@@ -76,22 +85,36 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   }
 
   Future<Map<String, double>> getPricing() async {
-    final prefs = await SharedPreferences.getInstance();
-    return {
-      'longBondPriceColored': double.tryParse(prefs.getString('longBondPrice') ?? '0') ?? 0,
-      'shortBondPriceColored': double.tryParse(prefs.getString('shortBondPrice') ?? '0') ?? 0,
-      'longBondPriceGrayscale': double.tryParse(prefs.getString('coloredPrice') ?? '0') ?? 0,
-      'shortBondPriceGrayscale': double.tryParse(prefs.getString('grayscalePrice') ?? '0') ?? 0,
-    };
+    try {
+      final pricing = await pricingService.fetchPricingData();
+      return {
+        'longBondPrice': double.tryParse(pricing['longBondPrice'] ?? '0') ?? 0,
+        'shortBondPrice': double.tryParse(pricing['shortBondPrice'] ?? '0') ?? 0,
+        'coloredPrice': double.tryParse(pricing['coloredPrice'] ?? '0') ?? 0,
+        'grayscalePrice': double.tryParse(pricing['grayscalePrice'] ?? '0') ?? 0,
+      };
+    } catch (e) {
+      print('Error fetching pricing data: $e');
+      return {
+        'longBondPrice': 0,
+        'shortBondPrice': 0,
+        'coloredPrice': 0,
+        'grayscalePrice': 0,
+      };
+    }
   }
 
   Future<double> calculateTotalPayment(int colorIndex, int paperSizeIndex, int pagesIndex, int pageCount, List<int> selectedPages, int copies) async {
     final pricing = await getPricing();
 
-    double shortBondPriceColored = pricing['shortBondPriceColored'] ?? 0;
-    double longBondPriceColored = pricing['longBondPriceColored'] ?? 0;
-    double shortBondPriceGrayscale = pricing['shortBondPriceGrayscale'] ?? 0;
-    double longBondPriceGrayscale = pricing['longBondPriceGrayscale'] ?? 0;
+    double shortBondPrice = pricing['shortBondPrice'] ?? 0;
+    double longBondPrice = pricing['longBondPrice'] ?? 0;
+    double coloredPrice = pricing['coloredPrice'] ?? 0;
+    double grayscalePrice = pricing['grayscalePrice'] ?? 0;
+    double shortBondPriceColored = shortBondPrice + coloredPrice;
+    double longBondPriceColored = longBondPrice + coloredPrice;
+    double shortBondPriceGrayscale = shortBondPrice + grayscalePrice;
+    double longBondPriceGrayscale = longBondPrice + coloredPrice;
 
     double pricePerPage = 0.0;
 
@@ -176,7 +199,7 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
     // Send POST request to backend /print endpoint
     try {
       final response = await http.post(
-        Uri.parse('http://${AppConfig.ipAddress}:3000/print/print'), // Replace with your backend URL
+        Uri.parse('http://${AppConfig.ipAddress}:3000/print/print'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },

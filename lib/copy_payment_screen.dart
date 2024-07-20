@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:frontend/pricing_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:frontend/config.dart';
@@ -30,11 +31,11 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
   bool proceedToPaymentClicked = false;
   Uint8List? scannedImageData;
   late PaymentService paymentService;
+  late PricingService pricingService;
 
   @override
   void initState() {
     super.initState();
-    fetchTotalPayment();
 
     paymentService = PaymentService(AppConfig.ipAddress);
     paymentService.listenToPaymentUpdates((amount) {
@@ -42,14 +43,90 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
         paymentInserted = amount;
       });
     });
+
+    pricingService = PricingService();
+
+    _fetchTotalPayment().catchError((e) {
+      print('Error fetching total payment: $e');
+    });
   }
 
-  void fetchTotalPayment() {
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        totalPayment = calculateTotalPayment();
-      });
+  Future<void> _fetchTotalPayment() async {
+    double calculatedTotal = await calculateTotalPayment(
+      widget.colorIndex,
+      widget.paperSizeIndex,
+      widget.resolutionIndex,
+      widget.copies,
+    );
+    setState(() {
+      totalPayment = calculatedTotal;
     });
+  }
+
+  Future<Map<String, double>> getPricing() async {
+    try {
+      final pricing = await pricingService.fetchPricingData();
+      return {
+        'longBondPrice': double.tryParse(pricing['longBondPrice'] ?? '0') ?? 0,
+        'shortBondPrice': double.tryParse(pricing['shortBondPrice'] ?? '0') ?? 0,
+        'coloredPrice': double.tryParse(pricing['coloredPrice'] ?? '0') ?? 0,
+        'grayscalePrice': double.tryParse(pricing['grayscalePrice'] ?? '0') ?? 0,
+        'highResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
+        'mediumResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
+        'lowResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
+      };
+    } catch (e) {
+      print('Error fetching pricing data: $e');
+      return {
+        'longBondPrice': 0,
+        'shortBondPrice': 0,
+        'coloredPrice': 0,
+        'grayscalePrice': 0,
+        'highResolutionPrice': 0,
+        'mediumResolutionPrice': 0,
+        'lowResolutionPrice': 0,
+      };
+    }
+  }
+
+  Future<double> calculateTotalPayment(int colorIndex, int paperSizeIndex, int resolutionIndex, int copies) async {
+    final pricing = await getPricing();
+
+    double shortBondPrice = pricing['shortBondPrice'] ?? 0;
+    double longBondPrice = pricing['longBondPrice'] ?? 0;
+    double coloredPrice = pricing['coloredPrice'] ?? 0;
+    double grayscalePrice = pricing['grayscalePrice'] ?? 0;
+    double highResolutionPrice = pricing['highResolutionPrice'] ?? 0;
+    double mediumResolutionPrice = pricing['mediumResolutionPrice'] ?? 0;
+    double lowResolutionPrice = pricing['lowResolutionPrice'] ?? 0;
+    double shortBondPriceColored = shortBondPrice + coloredPrice;
+    double longBondPriceColored = longBondPrice + coloredPrice;
+    double shortBondPriceGrayscale = shortBondPrice + grayscalePrice;
+    double longBondPriceGrayscale = longBondPrice + coloredPrice;
+
+    double pricePerPage = 0.0;
+
+    if (colorIndex == 1) {
+      pricePerPage = paperSizeIndex == 0 ? shortBondPriceColored : longBondPriceColored;
+    } else {
+      pricePerPage = paperSizeIndex == 0 ? shortBondPriceGrayscale : longBondPriceGrayscale;
+    }
+
+    switch (resolutionIndex) {
+      case 0:
+        pricePerPage += lowResolutionPrice;
+        break;
+      case 1:
+        pricePerPage += mediumResolutionPrice;
+        break;
+      case 2:
+        pricePerPage += highResolutionPrice;
+        break;
+      default:
+        break;
+    }
+
+    return pricePerPage * copies;
   }
 
   void fetchScannedImage() async {
@@ -317,31 +394,6 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
       default:
         return '';
     }
-  }
-
-  double calculateTotalPayment() {
-    double basePrice = 1.0;
-    double multiplier = 1.0;
-    double resolutionFactor = 1.0;
-
-    if (widget.colorIndex == 1) {
-      multiplier = 0.5;
-    }
-
-    switch (widget.resolutionIndex) {
-      case 0:
-        resolutionFactor = 1.5;
-        break;
-      case 2:
-        resolutionFactor = 0.5;
-        break;
-      default:
-        break;
-    }
-
-    double totalPayment = basePrice * multiplier * resolutionFactor * widget.copies;
-
-    return totalPayment;
   }
 
   Future<void> _sendToPrinter() async {
