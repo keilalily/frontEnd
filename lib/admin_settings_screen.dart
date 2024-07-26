@@ -5,7 +5,11 @@ import 'daily_sales_report.dart';
 import 'pricing_settings.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
-  const AdminSettingsScreen({super.key});
+  final String username;
+  const AdminSettingsScreen({
+    super.key,
+    required this.username
+  });
 
   @override
   AdminSettingsScreenState createState() => AdminSettingsScreenState();
@@ -61,9 +65,9 @@ class AdminSettingsScreenState extends State<AdminSettingsScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [
+              children: [
                 PricingSettings(),
-                ChangeInfoSettings(),
+                ChangeInfoSettings(username: widget.username),
                 DailySalesReport()
               ],
             ),

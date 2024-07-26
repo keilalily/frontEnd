@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/admin_settings_screen.dart';
 import 'package:frontend/custom_app_bar.dart';
@@ -22,34 +23,54 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
       final String username = _usernameController.text;
       final String password = _passwordController.text;
 
-      final response = await http.post(
-        Uri.parse('http://${AppConfig.ipAddress}:3000/admin/login'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, String>{
-          'username': username,
-          'password': password,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final String token = data['token'];
-        // Handle successful login, e.g., save the token
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminSettingsScreen()),
+      try {
+        final response = await http.post(
+          Uri.parse('http://${AppConfig.ipAddress}:3000/admin/login'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'username': username,
+            'password': password,
+          }),
         );
-      } else {
-        final Map<String, dynamic> error = jsonDecode(response.body);
-        final String message = error['message'];
-        // Show error message
+
+        print('Response status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        if (response.statusCode == 200) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AdminSettingsScreen(username: username)),
+          );
+        } else {
+          final Map<String, dynamic> error = jsonDecode(response.body);
+          final String message = error['message'];
+
+          // Show error message
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Login Failed'),
+              content: Text(message),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error occurred: $e');
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Login Failed'),
-            content: Text(message),
+            title: const Text('Error'),
+            content: Text('An error occurred. Please try again later.'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),
@@ -124,6 +145,9 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                           }
                           return null;
                         },
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(

@@ -4,7 +4,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ChangeInfoSettings extends StatefulWidget {
-  const ChangeInfoSettings({super.key});
+  final String username;
+  const ChangeInfoSettings({
+    super.key,
+    required this.username
+  });
 
   @override
   ChangeInfoSettingsState createState() => ChangeInfoSettingsState();
@@ -15,71 +19,104 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  String currentEmail = ''; // Replace with actual current email
-  String currentUsername = ''; // Replace with actual current username
-  String currentPassword = ''; // Replace with actual current password
-  bool emailSet = false;
+  String? currentEmail;
+  String? currentUsername;
+  String? currentPassword;
+  bool isLoading = false;
+  bool hasError = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchAdminDetails();
+    _fetchAdminDetails(widget.username);
   }
 
-  void _fetchAdminDetails() async {
-    // Fetch admin details from backend
+  String? validateGmail(String value) {
+    final RegExp gmailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@gmail\.com$');
+    if (!gmailRegex.hasMatch(value)) {
+      return 'Please enter a valid Gmail address';
+    }
+    return null;
+  }
+
+  Future<void> _fetchAdminDetails(String username) async {
+    setState(() {
+      isLoading = true;
+      hasError = false;
+    });
+
     try {
-      final response = await http.get(Uri.parse('http://${AppConfig.ipAddress}:3000/admin/getAdminDetails'));
+      final response = await http.get(
+        Uri.parse('http://${AppConfig.ipAddress}:3000/admin/getAdminDetails?username=$username'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           currentEmail = data['email'];
           currentUsername = data['username'];
           currentPassword = data['password'];
-          emailSet = currentEmail.isNotEmpty;
+          isLoading = false;
         });
+        print('Current password fetched: $currentPassword');
+
       } else {
+        setState(() {
+          isLoading = false;
+          hasError = true;
+        });
         print('Failed to fetch admin details: ${response.statusCode}');
       }
     } catch (error) {
+      setState(() {
+        isLoading = false;
+        hasError = true;
+      });
       print('Error fetching admin details: $error');
     }
   }
 
-  void _updateAdminDetails(String newEmail, String newUsername, String newPassword) async {
+  Future<void> updateAdminDetails({required String enteredPassword, String? newEmail, String? newUsername, String? newPassword}) async {
     // Update admin details in backend
     try {
       final response = await http.post(
         Uri.parse('http://${AppConfig.ipAddress}:3000/admin/updateAdminDetails'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': newEmail.isNotEmpty ? newEmail : currentEmail,
-          'username': newUsername.isNotEmpty ? newUsername : currentUsername,
-          'password': newPassword.isNotEmpty ? newPassword : currentPassword,
-          'currentPassword': currentPassword,
+          'email': newEmail != null ? newEmail : currentEmail,
+          'username': newUsername != null ? newUsername : currentUsername,
+          'newPassword': newPassword != null ? newPassword : '',
+          'currentPassword': enteredPassword,
         }),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          currentEmail = data['email'];
-          currentUsername = data['username'];
-          currentPassword = newPassword.isNotEmpty ? newPassword : currentPassword;
-          emailSet = currentEmail.isNotEmpty;
+          if (newEmail != null) currentEmail = data['email'];
+          if (newUsername != null) currentUsername = data['username'];
+          if (newPassword != null) currentPassword = newPassword;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Details updated successfully')),
         );
       } else {
-        print('Failed to update admin details: ${response.statusCode}');
+        final data = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update admin details: ${data['message']}')),
+        );
       }
     } catch (error) {
-      print('Error updating admin details: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating admin details: $error')),
+      );
     }
   }
 
-  void _showChangeDetailsDialog(String title, String labelText, TextEditingController controller, Function(String) updateFunction) {
-    final TextEditingController _currentPasswordController = TextEditingController();
+  void _showChangeDetailsDialog(String title, String labelText, TextEditingController controller) {
+    final TextEditingController enteredPasswordController = TextEditingController();
 
     showDialog(
       context: context,
@@ -107,7 +144,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
                 ),
               ),
               TextField(
-                controller: _currentPasswordController,
+                controller: enteredPasswordController,
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',
@@ -117,13 +154,13 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
           ),
           actions: [
             ElevatedButton(
-              onPressed: () {
-                if (_currentPasswordController.text == currentPassword) {
-                  updateFunction(controller.text);
-                  Navigator.of(context).pop();
-                } else {
-                  print('Incorrect current password');
-                }
+              onPressed: () async {
+                await updateAdminDetails(
+                  enteredPassword: enteredPasswordController.text,
+                  newEmail: title == 'Email' ? controller.text : null,
+                  newUsername: title == 'Username' ? controller.text : null,
+                );
+                Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
@@ -138,8 +175,10 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
     );
   }
 
-  void _showChangePasswordDialog(TextEditingController controller, Function(String) updateFunction) {
-    final TextEditingController _currentPasswordController = TextEditingController();
+  void _showChangePasswordDialog(TextEditingController controller) {
+    final TextEditingController enteredPasswordController = TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController = TextEditingController();
 
     showDialog(
       context: context,
@@ -162,20 +201,21 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: controller,
+                controller: enteredPasswordController,
+                obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Current Password',
                 ),
               ),
               TextField(
-                controller: _currentPasswordController,
+                controller: newPasswordController,
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'New Password',
                 ),
               ),
               TextField(
-                controller: _currentPasswordController,
+                controller: confirmPasswordController,
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Confirm New Password',
@@ -185,12 +225,17 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
           ),
           actions: [
             ElevatedButton(
-              onPressed: () {
-                if (_currentPasswordController.text == currentPassword) {
-                  updateFunction(controller.text);
+              onPressed: () async {
+                if (newPasswordController.text == confirmPasswordController.text) {
+                  await updateAdminDetails(
+                    enteredPassword: enteredPasswordController.text,
+                    newPassword: newPasswordController.text,
+                  );
                   Navigator.of(context).pop();
                 } else {
-                  print('Incorrect current password');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('New passwords do not match')),
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -208,105 +253,97 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 124.0, vertical: 16.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 100.0, vertical: 32.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              const Text(
-                'Change Information Settings',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    return Center(
+      child: isLoading
+        ? const CircularProgressIndicator()
+        : hasError
+          ? const Text(
+            'Failed to load admin details. Please try again later.',
+            style:  TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white
+            ),
+          )
+          : Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 124.0, vertical: 16.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 100.0, vertical: 32.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10.0),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Details',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              // Display all details first
-              _buildDetailsDisplayRow('Email', currentEmail),
-              _buildDetailsDisplayRow('Username', currentUsername),
-              const SizedBox(height: 16),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: <Widget>[
+                    const Text(
+                      'Change Information Settings',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Details',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    // Display all details first
+                    _buildDetailsDisplayRow('Email', currentEmail!),
+                    _buildDetailsDisplayRow('Username', currentUsername!),
+                    const SizedBox(height: 16),
 
-              // Display the buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (emailSet)
+                    // Display the buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            _showChangeDetailsDialog('Email', 'Email', _emailController);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                            foregroundColor: Colors.white,
+                            backgroundColor: const Color(0xFF8D6E63),
+                          ),
+                          child: const Text('Change Email'),
+                        ),
+                        const SizedBox(width: 16),
+                        
+                        ElevatedButton(
+                          onPressed: () {
+                            _showChangeDetailsDialog('Username', 'Username', _usernameController);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                            foregroundColor: Colors.white,
+                            backgroundColor: const Color(0xFF8D6E63),
+                          ),
+                          child: const Text('Change Username'),
+                        ),
+                      ],
+                    ),
+                    // Change password
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Password',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        _showChangeDetailsDialog('Email', 'Email', _emailController, (newEmail) {
-                          _updateAdminDetails(newEmail, '', '');
-                        });
+                        _showChangePasswordDialog(_passwordController);
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                         foregroundColor: Colors.white,
                         backgroundColor: const Color(0xFF8D6E63),
                       ),
-                      child: const Text('Change Email'),
+                      child: const Text('Change Password'),
                     ),
-                  if (!emailSet)
-                    ElevatedButton(
-                      onPressed: () {
-                        _showChangeDetailsDialog('Email', 'Email', _emailController, (newEmail) {
-                          _updateAdminDetails(newEmail, '', '');
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                        foregroundColor: Colors.white,
-                        backgroundColor: const Color(0xFF8D6E63),
-                      ),
-                      child: const Text('Add Email'),
-                    ),
-                  const SizedBox(width: 16),
-                  
-                  ElevatedButton(
-                    onPressed: () {
-                      _showChangeDetailsDialog('Username', 'Username', _usernameController, (newUsername) {
-                        _updateAdminDetails('', newUsername, '');
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                      foregroundColor: Colors.white,
-                      backgroundColor: const Color(0xFF8D6E63),
-                    ),
-                    child: const Text('Change Username'),
-                  ),
-                ],
-              ),
-              // Change password
-              const SizedBox(height: 20),
-              const Text(
-                'Password',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  _showChangePasswordDialog(_passwordController, (newPassword) {
-                    _updateAdminDetails('', '', newPassword);
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color(0xFF8D6E63),
+                  ],
                 ),
-                child: const Text('Change Password'),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
+          )
     );
   }
 
