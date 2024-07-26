@@ -33,11 +33,15 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
 
   String? validateGmail(String value) {
     final RegExp gmailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@gmail\.com$');
+    if (value.isEmpty) {
+      return 'Email cannot be empty';
+    }
     if (!gmailRegex.hasMatch(value)) {
       return 'Please enter a valid Gmail address';
     }
     return null;
   }
+
 
   Future<void> _fetchAdminDetails(String username) async {
     setState(() {
@@ -117,6 +121,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
 
   void _showChangeDetailsDialog(String title, String labelText, TextEditingController controller) {
     final TextEditingController enteredPasswordController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -134,33 +139,44 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
               ),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  labelText: 'New $labelText',
+          content: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    labelText: 'New $labelText',
+                  ),
+                  validator: (value) {
+                    if (title == 'Email') {
+                      return validateGmail(value ?? '');
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              TextField(
-                controller: enteredPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm Password',
+                TextField(
+                  controller: enteredPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm Password',
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           actions: [
             ElevatedButton(
-              onPressed: () async {
-                await updateAdminDetails(
-                  enteredPassword: enteredPasswordController.text,
-                  newEmail: title == 'Email' ? controller.text : null,
-                  newUsername: title == 'Username' ? controller.text : null,
-                );
-                Navigator.of(context).pop();
+              onPressed: () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  updateAdminDetails(
+                    enteredPassword: enteredPasswordController.text,
+                    newEmail: title == 'Email' ? controller.text : null,
+                    newUsername: title == 'Username' ? controller.text : null,
+                  );
+                  Navigator.of(context).pop();
+                }
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
@@ -179,6 +195,8 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
     final TextEditingController enteredPasswordController = TextEditingController();
     final TextEditingController newPasswordController = TextEditingController();
     final TextEditingController confirmPasswordController = TextEditingController();
+    
+    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -197,45 +215,68 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
               ),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: enteredPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Current Password',
+          content: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: enteredPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Current Password',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your current password';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              TextField(
-                controller: newPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'New Password',
+                TextFormField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'New Password',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a new password';
+                    }
+                    if (value.length < 4) {
+                      return 'Password must be at least 4 characters long';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              TextField(
-                controller: confirmPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm New Password',
+                TextFormField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm New Password',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your new password';
+                    }
+                    if (value != newPasswordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           actions: [
             ElevatedButton(
-              onPressed: () async {
-                if (newPasswordController.text == confirmPasswordController.text) {
-                  await updateAdminDetails(
+              onPressed: () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  updateAdminDetails(
                     enteredPassword: enteredPasswordController.text,
                     newPassword: newPasswordController.text,
                   );
                   Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('New passwords do not match')),
-                  );
                 }
               },
               style: ElevatedButton.styleFrom(
