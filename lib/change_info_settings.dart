@@ -243,8 +243,8 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a new password';
                     }
-                    if (value.length < 4) {
-                      return 'Password must be at least 4 characters long';
+                    if (value.length != 4) {
+                      return 'Password must be 4 digits only';
                     }
                     return null;
                   },
