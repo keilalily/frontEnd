@@ -52,7 +52,7 @@ class DailySalesReportState extends State<DailySalesReport> {
 
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pricing settings saved successfully')),
+      const SnackBar(content: Text('Inventory settings saved successfully')),
     );
   }
 
@@ -153,7 +153,6 @@ class DailySalesReportState extends State<DailySalesReport> {
                 const SizedBox(width: 100),
                 Expanded(
                   child: Column(
-                    // crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Printer Status',
