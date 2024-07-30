@@ -169,7 +169,7 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
 
   @override
   void dispose() {
-    paymentService.close();
+    paymentService.dispose();
     super.dispose();
   }
 

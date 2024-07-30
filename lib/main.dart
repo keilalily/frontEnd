@@ -204,6 +204,7 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/copy_settings_screen.dart';
 import 'package:frontend/print_select_screen.dart';
 import 'package:frontend/scan_settings_screen.dart';
@@ -211,6 +212,7 @@ import 'package:frontend/print_upload_screen.dart';
 import 'package:frontend/admin_login_screen.dart';
 
 void main() async {
+  await dotenv.load(fileName: ".env");
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const VPM());
 }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:frontend/config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/custom_app_bar.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:http/http.dart' as http;
@@ -56,7 +56,7 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
       print('Error initializing PDF Controller: $e');
     }
 
-    paymentService = PaymentService(AppConfig.ipAddress);
+    paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
     paymentService.listenToPaymentUpdates((amount) {
       setState(() {
         paymentInserted = amount;
@@ -181,7 +181,7 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   @override
   void dispose() {
     pdfController.dispose();
-    paymentService.close();
+    paymentService.dispose();
     super.dispose();
   }
 
@@ -199,7 +199,7 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
     // Send POST request to backend /print endpoint
     try {
       final response = await http.post(
-        Uri.parse('http://${AppConfig.ipAddress}:3000/print/print'),
+        Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/print/print'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -367,15 +367,10 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                                                   ? ElevatedButton(
                                                       onPressed: printDocument,
                                                       style: ElevatedButton.styleFrom(
+                                                        textStyle: const TextStyle(fontSize: 20),
+                                                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
                                                         foregroundColor: Colors.white,
-                                                        backgroundColor: const Color(0xFF2B2E4A),
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(8.0),
-                                                        ),
-                                                        padding: const EdgeInsets.symmetric(
-                                                          horizontal: 32.0,
-                                                          vertical: 16.0,
-                                                        ),
+                                                        backgroundColor: const Color(0xFF8D6E63),
                                                       ),
                                                       child: const Text(
                                                         'PRINT',

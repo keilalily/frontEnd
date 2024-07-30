@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/config.dart';
 import 'package:frontend/payment_service.dart';
 import 'package:frontend/pricing_service.dart';
@@ -39,7 +40,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
     super.initState();
     fetchScannedImage();
 
-    paymentService = PaymentService(AppConfig.ipAddress);
+    paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
     paymentService.listenToPaymentUpdates((amount) {
       setState(() {
         paymentInserted = amount;
@@ -153,7 +154,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
 
   @override
   void dispose() {
-    paymentService.close();
+    paymentService.dispose();
     super.dispose();
   }
 
@@ -302,6 +303,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
                                               });
+                                              paymentService.triggerCoinCounting();
                                             },
                                             style: ElevatedButton.styleFrom(
                                               textStyle: const TextStyle(fontSize: 20),
