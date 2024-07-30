@@ -98,7 +98,7 @@ void updateInventoryData() async {
 
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Inventory updated successfully')),
+        const SnackBar(content: Text('Inventory settings saved successfully')),
     );
   } else {
     // Handle error
