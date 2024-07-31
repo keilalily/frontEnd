@@ -1,10 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'custom_app_bar.dart';
-import 'config.dart';
-
-
 
 class PrintUploadScreen extends StatefulWidget {
   const PrintUploadScreen({super.key});
@@ -21,7 +19,7 @@ class PrintUploadScreenState extends State<PrintUploadScreen> {
   Future<void> _selectFile() async {
     var filePickerResult = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'pptx', 'docx'],
+      allowedExtensions: ['pdf', 'docx'],
     );
 
     if (filePickerResult != null && filePickerResult.files.isNotEmpty) {
@@ -36,7 +34,7 @@ class PrintUploadScreenState extends State<PrintUploadScreen> {
   Future<void> _uploadFile(BuildContext context) async {
     if (selectedFileName != null && pdfBytes != null) {
       try {
-        var url = Uri.parse('http://${AppConfig.ipAddress}:3000/file/upload');
+        var url = Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/file/upload');
 
         var request = http.MultipartRequest('POST', url)
           ..files.add(

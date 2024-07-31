@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:frontend/config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/pricing_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -89,7 +89,7 @@ class PricingSettingsState extends State<PricingSettings> {
       };
 
       final response = await http.post(
-        Uri.parse('http://${AppConfig.ipAddress}:3000/pricing/prices'),
+        Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/pricing/prices'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(pricing),
       );

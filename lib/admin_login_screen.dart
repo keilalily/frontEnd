@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/admin_settings_screen.dart';
 import 'package:frontend/custom_app_bar.dart';
-import 'package:frontend/config.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -25,7 +25,7 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
 
       try {
         final response = await http.post(
-          Uri.parse('http://${AppConfig.ipAddress}:3000/admin/login'),
+          Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/admin/login'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },

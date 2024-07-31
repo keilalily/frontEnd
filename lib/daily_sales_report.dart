@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:frontend/config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -36,7 +36,7 @@ class DailySalesReportState extends State<DailySalesReport> {
   }
 
   Future<void> fetchInventoryData() async {
-    final response = await http.get(Uri.parse('http://${AppConfig.ipAddress}:3000/data/inventory'));
+    final response = await http.get(Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/data/inventory'));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -52,33 +52,9 @@ class DailySalesReportState extends State<DailySalesReport> {
     }
   }
 
-
-  // Method to simulate data update (replace with actual data update logic)
-  // void updateSalesData() {
-  //   setState(() {
-  //     _printSales = '100'; // Example value, replace with actual data
-  //     _scanSales = '50';   // Example value, replace with actual data
-  //     _copySales = '20';   // Example value, replace with actual data
-  //     _totalSales = '170'; // Example value, replace with actual data
-  //   });
-  // }
-
-  // void updateInventoryData() {
-  //   setState(() {
-  //     _remainingPapersLong = _longBondStockController.text;
-  //     _remainingPapersShort = _shortBondStockController.text;
-  //     _remainingInkBlack = _inkBlackStockController.text;
-  //     _remainingInkColor = _inkColorStockController.text;
-  //   });
-
-  //   Navigator.of(context).pop();
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     const SnackBar(content: Text('Pricing settings saved successfully')),
-  //   );
-  // }
 void updateInventoryData() async {
   final response = await http.put(
-    Uri.parse('http://${AppConfig.ipAddress}:3000/data/inventory'),
+    Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/data/inventory'),
     headers: {'Content-Type': 'application/json'},
     body: json.encode({
       'remainingPapersLong': _longBondStockController.text,
@@ -105,8 +81,6 @@ void updateInventoryData() async {
     print('Failed to update inventory');
   }
 }
-
-
 
   @override
   void dispose() {

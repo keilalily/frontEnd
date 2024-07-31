@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'scan_payment_screen.dart';
 import 'custom_app_bar.dart';
@@ -22,7 +22,7 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
 
   Future<void> startScan() async {
     // Construct the URL to your Node.js backend endpoint
-    final url = Uri.parse('http://${AppConfig.ipAddress}:3000//scan/scan');
+    final url = Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000//scan/scan');
 
     try {
       // Send a POST request to start scanning with selected settings

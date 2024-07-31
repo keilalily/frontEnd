@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:html' as html;
 import 'custom_app_bar.dart';
 import 'print_settings_screen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'config.dart';
 
 class PrintWirelessUploadScreen extends StatefulWidget {
   const PrintWirelessUploadScreen({super.key});
@@ -28,15 +28,15 @@ class PrintWirelessUploadScreenState extends State<PrintWirelessUploadScreen> {
   @override
   void initState() {
     super.initState();
-    const String ipAddress = "${AppConfig.ipAddress}";
-    const String wsUrl = 'ws://$ipAddress:3000';
+    String ipAddress = dotenv.env['IP_ADDRESS']!;
+    String wsUrl = 'ws://$ipAddress:3000';
     channel = WebSocketChannel.connect(Uri.parse(wsUrl));
     channel.stream.listen((message) {
       final data = jsonDecode(message);
 
       // Check if the received file has a valid extension
       String fileName = data['fileName'];
-      if (!['pdf', 'pptx', 'docx'].contains(fileName.split('.').last.toLowerCase())) {
+      if (!['pdf', 'docx'].contains(fileName.split('.').last.toLowerCase())) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Unsupported file type received.'),
@@ -89,7 +89,7 @@ class PrintWirelessUploadScreenState extends State<PrintWirelessUploadScreen> {
   Widget build(BuildContext context) {
     final String currentUrl = html.window.location.href;
     final Uri uri = Uri.parse(currentUrl);
-    const String ipAddress = "${AppConfig.ipAddress}";
+    String ipAddress = dotenv.env['IP_ADDRESS']!;
     final String uploadUrl = '${uri.scheme}://$ipAddress:${uri.port}/#/upload';
 
     return MaterialApp(

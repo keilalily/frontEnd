@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/copy_payment_screen.dart';
 import 'package:frontend/custom_app_bar.dart';
 import 'package:frontend/custom_button_row.dart';
@@ -23,7 +23,7 @@ class CopySettingsScreenState extends State<CopySettingsScreen> {
 
   Future<void> startScan() async {
     // Construct the URL to your Node.js backend endpoint
-    final url = Uri.parse('http://${AppConfig.ipAddress}:3000//scan/scan');
+    final url = Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000//scan/scan');
 
     try {
       // Send a POST request to start scanning with selected settings

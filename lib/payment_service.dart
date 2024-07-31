@@ -30,11 +30,9 @@ import 'package:http/http.dart' as http;
 class PaymentService {
   final String ipAddress;
   final StreamController<double> _paymentController = StreamController<double>.broadcast();
-  late Timer _statusTimer;
+  Timer? _statusTimer; // Nullable Timer
 
-  PaymentService(this.ipAddress) {
-    _startFetchingStatus();
-  }
+  PaymentService(this.ipAddress);
 
   Stream<double> get paymentStream => _paymentController.stream;
 
@@ -69,7 +67,7 @@ class PaymentService {
         final double amountInserted = data['amountInserted']?.toDouble() ?? 0.0;
         _paymentController.add(amountInserted);
       } else {
-        print('Failed to fetch status');
+        print('Failed to fetch payment status');
       }
     } catch (e) {
       print('Error fetching status: $e');
@@ -93,16 +91,19 @@ class PaymentService {
     }
   }
 
-  void _startFetchingStatus() {
+  void startFetchingStatus() {
     _statusTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       fetchStatus();
     });
   }
 
+  void stopFetchingStatus() {
+    _statusTimer?.cancel();
+    _statusTimer = null;
+  }
+
   void dispose() {
     _paymentController.close();
-    _statusTimer.cancel();
+    stopFetchingStatus();
   }
 }
-
-

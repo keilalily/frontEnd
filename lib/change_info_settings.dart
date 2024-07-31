@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -51,7 +51,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://${AppConfig.ipAddress}:3000/admin/getAdminDetails?username=$username'),
+        Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/admin/getAdminDetails?username=$username'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -87,7 +87,7 @@ class ChangeInfoSettingsState extends State<ChangeInfoSettings> {
     // Update admin details in backend
     try {
       final response = await http.post(
-        Uri.parse('http://${AppConfig.ipAddress}:3000/admin/updateAdminDetails'),
+        Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/admin/updateAdminDetails'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': newEmail != null ? newEmail : currentEmail,

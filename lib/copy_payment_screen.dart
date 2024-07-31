@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/pricing_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:frontend/config.dart';
 import 'package:frontend/custom_app_bar.dart';
 import 'package:frontend/payment_service.dart';
 
@@ -37,7 +37,7 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
   void initState() {
     super.initState();
 
-    paymentService = PaymentService(AppConfig.ipAddress);
+    paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
     paymentService.listenToPaymentUpdates((amount) {
       setState(() {
         paymentInserted = amount;
@@ -131,7 +131,7 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
 
   void fetchScannedImage() async {
     try {
-      String apiUrl = 'http://${AppConfig.ipAddress}/scan/scan';
+      String apiUrl = 'http://${dotenv.env['IP_ADDRESS']!}/scan/scan';
 
       // Make POST request to backend
       var response = await http.post(
@@ -403,7 +403,7 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
     }
 
     try {
-      String apiUrl = 'http://${AppConfig.ipAddress}/copy/copy';
+      String apiUrl = 'http://${dotenv.env['IP_ADDRESS']!}/copy/copy';
 
       String paperSize = widget.paperSizeIndex == 0 ? 'Letter' : 'Legal';
 

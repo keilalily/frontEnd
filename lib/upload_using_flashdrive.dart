@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:frontend/config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'custom_app_bar.dart';
 import 'print_settings_screen.dart';
 import 'package:http/http.dart' as http;
@@ -156,12 +156,12 @@ class UploadUsingFlashdriveScreenState
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'pptx', 'docx'],
+        allowedExtensions: ['pdf', 'docx'],
       );
 
       if (result != null && result.files.isNotEmpty) {
         String extension = result.files.first.extension!;
-        if (['pdf', 'pptx', 'docx'].contains(extension.toLowerCase())) {
+        if (['pdf', 'docx'].contains(extension.toLowerCase())) {
           setState(() {
             selectedFileName = result.files.first.name;
             pdfBytes = result.files.first.bytes;
@@ -174,7 +174,7 @@ class UploadUsingFlashdriveScreenState
           // Show error message for unsupported file type
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Unsupported file type selected. Please select a PDF, DOCX, or PPTX file.'),
+              content: Text('Unsupported file type selected. Please select a PDF or DOCX file.'),
               backgroundColor: Colors.red,
             ),
           );
@@ -209,7 +209,7 @@ class UploadUsingFlashdriveScreenState
       });
 
       try {
-        var uri = Uri.parse('http://${AppConfig.ipAddress}:3000/file/upload');
+        var uri = Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/file/upload');
         var request = http.MultipartRequest('POST', uri)
           ..files.add(
             http.MultipartFile.fromBytes(

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/config.dart';
 import 'package:frontend/payment_service.dart';
 import 'package:frontend/pricing_service.dart';
 import 'package:http/http.dart' as http;
@@ -116,7 +115,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
 
   void fetchScannedImage() async {
     try {
-      String apiUrl = 'http://${AppConfig.ipAddress}/scan/scan';
+      String apiUrl = 'http://${dotenv.env['IP_ADDRESS']!}/scan/scan';
 
       // Make POST request to backend
       var response = await http.post(
@@ -387,7 +386,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
       });
 
       try {
-        var uri = Uri.parse('http://${AppConfig.ipAddress}:3000/scan/sendScannedFile');
+        var uri = Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/scan/sendScannedFile');
         var response = await http.post(
           uri,
           headers: {'Content-Type': 'application/json'},
