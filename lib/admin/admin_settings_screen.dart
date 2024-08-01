@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/custom_app_bar.dart';
-import 'change_info_settings.dart';
-import 'daily_sales_report.dart';
-import 'pricing_settings.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
+import 'package:frontend/admin/change_info_settings.dart';
+import 'package:frontend/inventory/daily_sales_report.dart';
+import 'package:frontend/pricing/pricing_settings.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   final String username;

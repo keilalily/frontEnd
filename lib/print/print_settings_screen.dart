@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:frontend/custom_app_bar.dart';
-import 'package:frontend/print_payment_screen.dart';
-import 'package:frontend/custom_button_row.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
+import 'package:frontend/print/print_payment_screen.dart';
+import 'package:frontend/widgets/custom_button_row.dart';
 
 class PrintSettingsScreen extends StatefulWidget {
   const PrintSettingsScreen({

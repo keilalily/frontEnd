@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:frontend/inventory/inventory_service.dart';
 
 class DailySalesReport extends StatefulWidget {
   const DailySalesReport({super.key});
@@ -13,6 +11,7 @@ class DailySalesReport extends StatefulWidget {
 }
 
 class DailySalesReportState extends State<DailySalesReport> {
+  final InventoryService _inventoryService = InventoryService();
   String _printSales = '0';
   String _scanSales = '0';
   String _copySales = '0';
@@ -29,58 +28,32 @@ class DailySalesReportState extends State<DailySalesReport> {
   final TextEditingController _inkBlackStockController = TextEditingController();
   final TextEditingController _inkColorStockController = TextEditingController();
 
-@override
+  @override
   void initState() {
     super.initState();
-    fetchInventoryData();
+    _fetchInventoryData();
   }
 
-  Future<void> fetchInventoryData() async {
-    final response = await http.get(Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/data/inventory'));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+  Future<void> _fetchInventoryData() async {
+    final data = await _inventoryService.fetchInventoryData();
+    if (data.isNotEmpty) {
       setState(() {
-        _remainingPapersLong = data['remainingPapersLong'];
-        _remainingPapersShort = data['remainingPapersShort'];
-        _remainingInkBlack = data['remainingInkBlack'];
-        _remainingInkColor = data['remainingInkColor'];
+        _remainingPapersLong = data['remainingPapersLong']!;
+        _remainingPapersShort = data['remainingPapersShort']!;
+        _remainingInkBlack = data['remainingInkBlack']!;
+        _remainingInkColor = data['remainingInkColor']!;
       });
-    } else {
-      // Handle error
-      print('Failed to fetch inventory data');
     }
   }
 
-void updateInventoryData() async {
-  final response = await http.put(
-    Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000/data/inventory'),
-    headers: {'Content-Type': 'application/json'},
-    body: json.encode({
-      'remainingPapersLong': _longBondStockController.text,
-      'remainingPapersShort': _shortBondStockController.text,
-      'remainingInkBlack': _inkBlackStockController.text,
-      'remainingInkColor': _inkColorStockController.text,
-    }),
-  );
-
-  if (response.statusCode == 200) {
+  void _updateState(String long, String short, String black, String color) {
     setState(() {
-      _remainingPapersLong = _longBondStockController.text;
-      _remainingPapersShort = _shortBondStockController.text;
-      _remainingInkBlack = _inkBlackStockController.text;
-      _remainingInkColor = _inkColorStockController.text;
+      _remainingPapersLong = long;
+      _remainingPapersShort = short;
+      _remainingInkBlack = black;
+      _remainingInkColor = color;
     });
-
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Inventory settings saved successfully')),
-    );
-  } else {
-    // Handle error
-    print('Failed to update inventory');
   }
-}
 
   @override
   void dispose() {
@@ -105,7 +78,7 @@ void updateInventoryData() async {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Edit Inventory'),
+              const Text('Edit Paper Inventory'),
               IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () {
@@ -130,7 +103,16 @@ void updateInventoryData() async {
           ),
           actions: <Widget>[
             ElevatedButton(
-              onPressed: updateInventoryData,
+              onPressed: () {
+                _inventoryService.updateInventoryData(
+                  context: context,
+                  longBondStockController: _longBondStockController,
+                  shortBondStockController: _shortBondStockController,
+                  inkBlackStockController: _inkBlackStockController,
+                  inkColorStockController: _inkColorStockController,
+                  updateState: _updateState,
+                );
+              },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                 foregroundColor: Colors.white,
@@ -160,7 +142,6 @@ void updateInventoryData() async {
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Total Sales',
@@ -184,7 +165,7 @@ void updateInventoryData() async {
                         'Printer Status',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 20.0),
+                      const SizedBox(height: 16.0),
                       const Text('Remaining Papers:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8.0),
                       _buildStatusRow('Long', _remainingPapersLong),

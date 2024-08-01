@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/print_wireless_upload.dart';
-import 'package:frontend/upload_using_flashdrive.dart';
-import 'custom_app_bar.dart';
+import 'package:frontend/print/print_wireless_upload.dart';
+import 'package:frontend/print/upload_using_flashdrive.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
 
 
 class PrintSelectScreen extends StatelessWidget {

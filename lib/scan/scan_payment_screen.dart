@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/payment_service.dart';
-import 'package:frontend/pricing_service.dart';
 import 'package:http/http.dart' as http;
-import 'package:frontend/custom_app_bar.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
+import 'package:frontend/payment/payment_service.dart';
+import 'package:frontend/pricing/pricing_service.dart';
 
 class ScanPaymentScreen extends StatefulWidget {
   final int paperSizeIndex;

@@ -473,11 +473,11 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/custom_app_bar.dart';
-import 'package:frontend/printing_service.dart';
 import 'package:pdfx/pdfx.dart';
-import 'payment_service.dart';
-import 'pricing_service.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
+import 'package:frontend/print/printing_service.dart';
+import 'package:frontend/payment/payment_service.dart';
+import 'package:frontend/pricing/pricing_service.dart';
 
 class PrintPaymentScreen extends StatefulWidget {
   final String fileName;
@@ -506,6 +506,7 @@ class PrintPaymentScreen extends StatefulWidget {
 }
 
 class PrintPaymentScreenState extends State<PrintPaymentScreen> {
+  final PrintingService _printingService = PrintingService();
   double totalPayment = 0.0;
   double paymentInserted = 0.0;
   bool proceedToPaymentClicked = false;
@@ -537,7 +538,7 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   }
 
   Future<void> _fetchTotalPayment() async {
-    double calculatedTotal = await fetchTotalPayment(
+    double calculatedTotal = await _printingService.fetchTotalPayment(
       colorIndex: widget.colorIndex,
       paperSizeIndex: widget.paperSizeIndex,
       pagesIndex: widget.pagesIndex,
@@ -760,8 +761,9 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                                               paymentInserted >= totalPayment
                                                   ? ElevatedButton(
                                                       onPressed: () async {
-                                                        await printDocument(
+                                                        await _printingService.printDocument(
                                                           ipAddress: dotenv.env['IP_ADDRESS']!,
+                                                          pdfBytes: widget.pdfBytes,
                                                           paperSizeIndex: widget.paperSizeIndex,
                                                           colorIndex: widget.colorIndex,
                                                           pagesIndex: widget.pagesIndex,

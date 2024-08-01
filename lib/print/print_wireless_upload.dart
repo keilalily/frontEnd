@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:html' as html;
-import 'custom_app_bar.dart';
-import 'print_settings_screen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
+import 'package:frontend/print/print_settings_screen.dart';
 
 class PrintWirelessUploadScreen extends StatefulWidget {
   const PrintWirelessUploadScreen({super.key});

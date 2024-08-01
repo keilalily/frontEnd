@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:frontend/admin_settings_screen.dart';
-import 'package:frontend/custom_app_bar.dart';
+import 'package:frontend/admin/admin_settings_screen.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});

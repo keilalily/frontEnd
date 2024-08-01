@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'scan_payment_screen.dart';
-import 'custom_app_bar.dart';
-import 'custom_button_row.dart';
+import 'package:frontend/scan/scan_payment_screen.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
+import 'package:frontend/widgets/custom_button_row.dart';
 
 class ScanSettingsScreen extends StatefulWidget {
   const ScanSettingsScreen({super.key});

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/copy_payment_screen.dart';
-import 'package:frontend/custom_app_bar.dart';
-import 'package:frontend/custom_button_row.dart';
+import 'package:frontend/copy/copy_payment_screen.dart';
+import 'package:frontend/widgets/custom_app_bar.dart';
+import 'package:frontend/widgets/custom_button_row.dart';
 import 'package:http/http.dart' as http;
 
 class CopySettingsScreen extends StatefulWidget {

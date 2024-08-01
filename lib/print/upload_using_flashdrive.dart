@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'custom_app_bar.dart';
-import 'print_settings_screen.dart';
 import 'package:http/http.dart' as http;
+import 'package:frontend/widgets/custom_app_bar.dart';
+import 'package:frontend/print/print_settings_screen.dart';
 
 class UploadUsingFlashdriveScreen extends StatefulWidget {
   const UploadUsingFlashdriveScreen({super.key});
