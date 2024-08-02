@@ -40,11 +40,6 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
     fetchScannedImage();
 
     paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
-    paymentService.listenToPaymentUpdates((amount) {
-      setState(() {
-        paymentInserted = amount;
-      });
-    });
 
     pricingService = PricingService();
 
@@ -153,6 +148,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
 
   @override
   void dispose() {
+    paymentService.stopFetchingStatus();
     paymentService.dispose();
     super.dispose();
   }
@@ -301,8 +297,13 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                             onPressed: () {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
+                                                paymentService.startFetchingStatus();
+                                                paymentService.listenToPaymentUpdates((amount) {
+                                                  setState(() {
+                                                    paymentInserted = amount;
+                                                  });
+                                                });
                                               });
-                                              paymentService.triggerCoinCounting();
                                             },
                                             style: ElevatedButton.styleFrom(
                                               textStyle: const TextStyle(fontSize: 20),

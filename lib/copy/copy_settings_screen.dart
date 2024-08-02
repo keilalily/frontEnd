@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/copy/copy_payment_screen.dart';
 import 'package:frontend/widgets/custom_app_bar.dart';
 import 'package:frontend/widgets/custom_button_row.dart';
-import 'package:http/http.dart' as http;
+import 'package:frontend/copy/copy_service.dart';
 
 class CopySettingsScreen extends StatefulWidget {
   const CopySettingsScreen({super.key});
@@ -13,6 +13,7 @@ class CopySettingsScreen extends StatefulWidget {
 }
 
 class CopySettingsScreenState extends State<CopySettingsScreen> {
+  final CopyService _copyService = CopyService();
   int _paperSizeIndex = -1; // Track selected index for Paper Size
   int _colorIndex = -1; // Track selected index for Color
   int _resolutionIndex = -1; // Track selected index for Resolution
@@ -21,25 +22,68 @@ class CopySettingsScreenState extends State<CopySettingsScreen> {
   bool get canProceed => _paperSizeIndex != -1 && _colorIndex != -1 &&
       _resolutionIndex != -1 && _copies > 0;
 
-  Future<void> startScan() async {
-    // Construct the URL to your Node.js backend endpoint
-    final url = Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000//scan/scan');
+  // Future<void> startScan() async {
+  //   // Construct the URL to your Node.js backend endpoint
+  //   final url = Uri.parse('http://${dotenv.env['IP_ADDRESS']!}:3000//scan/scan');
 
-    try {
-      // Send a POST request to start scanning with selected settings
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: {
-          'paperSizeIndex': _paperSizeIndex,
-          'colorIndex': _colorIndex,
-          'resolutionIndex': _resolutionIndex,
-        },
-      );
+  //   try {
+  //     // Send a POST request to start scanning with selected settings
+  //     final response = await http.post(
+  //       url,
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: {
+  //         'paperSizeIndex': _paperSizeIndex,
+  //         'colorIndex': _colorIndex,
+  //         'resolutionIndex': _resolutionIndex,
+  //       },
+  //     );
 
-      // Check if the request was successful
-      if (response.statusCode == 200) {
-        // Navigate to ScanPaymentScreen with selected settings
+  //     // Check if the request was successful
+  //     if (response.statusCode == 200) {
+  //       // Navigate to ScanPaymentScreen with selected settings
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => CopyPaymentScreen(
+  //             paperSizeIndex: _paperSizeIndex,
+  //             colorIndex: _colorIndex,
+  //             resolutionIndex: _resolutionIndex,
+  //             copies: _copies
+  //           ),
+  //         ),
+  //       );
+  //     } else {
+  //       // Handle error if the request fails
+  //       throw Exception('Failed to start scanning: ${response.reasonPhrase}');
+  //     }
+  //   } catch (e) {
+  //     // Handle network or server errors
+  //     print('Error starting scan: $e');
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: const Text('Error'),
+  //         content: const Text('Failed to start scanning. Please try again later.'),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             child: const Text('OK'),
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  // }
+
+  Future<void> _startScan() async {
+    await _copyService.startScan(
+      ipAddress: dotenv.env['IP_ADDRESS']!,
+      paperSizeIndex: _paperSizeIndex,
+      colorIndex: _colorIndex,
+      resolutionIndex: _resolutionIndex,
+      onSuccess: () {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -47,33 +91,29 @@ class CopySettingsScreenState extends State<CopySettingsScreen> {
               paperSizeIndex: _paperSizeIndex,
               colorIndex: _colorIndex,
               resolutionIndex: _resolutionIndex,
-              copies: _copies
+              copies: _copies,
             ),
           ),
         );
-      } else {
-        // Handle error if the request fails
-        throw Exception('Failed to start scanning: ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      // Handle network or server errors
-      print('Error starting scan: $e');
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: const Text('Failed to start scanning. Please try again later.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-      );
-    }
+      },
+      onError: (error) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(error),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -198,7 +238,7 @@ class CopySettingsScreenState extends State<CopySettingsScreen> {
                             const SizedBox(height: 16),
                             Center(
                               child: ElevatedButton(
-                                onPressed: canProceed ? startScan : null,
+                                onPressed: canProceed ? _startScan : null,
                                 style: ElevatedButton.styleFrom(
                                     textStyle: const TextStyle(fontSize: 20),
                                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),

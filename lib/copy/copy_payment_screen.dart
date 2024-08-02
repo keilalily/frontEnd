@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/pricing/pricing_service.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/custom_app_bar.dart';
 import 'package:frontend/payment/payment_service.dart';
+import 'package:frontend/copy/copy_service.dart';
 
 class CopyPaymentScreen extends StatefulWidget {
   final int paperSizeIndex;
@@ -26,6 +25,7 @@ class CopyPaymentScreen extends StatefulWidget {
 }
 
 class CopyPaymentScreenState extends State<CopyPaymentScreen> {
+  final CopyService _copyService = CopyService();
   double totalPayment = 0.0;
   double paymentInserted = 0.0;
   bool proceedToPaymentClicked = false;
@@ -38,13 +38,12 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
     super.initState();
 
     paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
-    paymentService.listenToPaymentUpdates((amount) {
-      setState(() {
-        paymentInserted = amount;
-      });
-    });
 
     pricingService = PricingService();
+
+    _fetchScannedImage().catchError((e) {
+      print('Error fetching scanned image: $e');
+    });
 
     _fetchTotalPayment().catchError((e) {
       print('Error fetching total payment: $e');
@@ -52,123 +51,82 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
   }
 
   Future<void> _fetchTotalPayment() async {
-    double calculatedTotal = await calculateTotalPayment(
-      widget.colorIndex,
-      widget.paperSizeIndex,
-      widget.resolutionIndex,
-      widget.copies,
+    double calculatedTotal = await _copyService.fetchTotalPayment(
+      colorIndex: widget.colorIndex,
+      paperSizeIndex: widget.paperSizeIndex,
+      resolutionIndex: widget.resolutionIndex,
+      copies: widget.copies,
+      pricingService: pricingService,
     );
     setState(() {
       totalPayment = calculatedTotal;
     });
   }
 
-  Future<Map<String, double>> getPricing() async {
+  // void fetchScannedImage() async {
+  //   try {
+  //     String apiUrl = 'http://${dotenv.env['IP_ADDRESS']!}/scan/scan';
+
+  //     // Make POST request to backend
+  //     var response = await http.post(
+  //       Uri.parse(apiUrl),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({
+  //         'paperSizeIndex': widget.paperSizeIndex,
+  //         'colorIndex': widget.colorIndex,
+  //         'resolutionIndex': widget.resolutionIndex,
+  //       }),
+  //     );
+
+  //     // Handle response
+  //     if (response.statusCode == 200) {
+  //       // Decode the response body
+  //       Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+  //       // Extract scanned image data (assuming it's base64 encoded)
+  //       String imageDataString = responseBody['imageData'];
+  //       Uint8List decodedBytes = base64Decode(imageDataString);
+
+  //       // Update state with scanned image data
+  //       setState(() {
+  //         scannedImageData = decodedBytes;
+  //       });
+  //     } else {
+  //       // Handle error
+  //       print('Error fetching scanned image: ${response.statusCode}');
+  //     }
+  //   } catch (error) {
+  //     // Handle error
+  //     print('Error fetching scanned image: $error');
+  //   }
+  // }
+
+  Future<void> _fetchScannedImage() async {
     try {
-      final pricing = await pricingService.fetchPricingData();
-      return {
-        'longBondPrice': double.tryParse(pricing['longBondPrice'] ?? '0') ?? 0,
-        'shortBondPrice': double.tryParse(pricing['shortBondPrice'] ?? '0') ?? 0,
-        'coloredPrice': double.tryParse(pricing['coloredPrice'] ?? '0') ?? 0,
-        'grayscalePrice': double.tryParse(pricing['grayscalePrice'] ?? '0') ?? 0,
-        'highResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
-        'mediumResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
-        'lowResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
-      };
-    } catch (e) {
-      print('Error fetching pricing data: $e');
-      return {
-        'longBondPrice': 0,
-        'shortBondPrice': 0,
-        'coloredPrice': 0,
-        'grayscalePrice': 0,
-        'highResolutionPrice': 0,
-        'mediumResolutionPrice': 0,
-        'lowResolutionPrice': 0,
-      };
-    }
-  }
-
-  Future<double> calculateTotalPayment(int colorIndex, int paperSizeIndex, int resolutionIndex, int copies) async {
-    final pricing = await getPricing();
-
-    double shortBondPrice = pricing['shortBondPrice'] ?? 0;
-    double longBondPrice = pricing['longBondPrice'] ?? 0;
-    double coloredPrice = pricing['coloredPrice'] ?? 0;
-    double grayscalePrice = pricing['grayscalePrice'] ?? 0;
-    double highResolutionPrice = pricing['highResolutionPrice'] ?? 0;
-    double mediumResolutionPrice = pricing['mediumResolutionPrice'] ?? 0;
-    double lowResolutionPrice = pricing['lowResolutionPrice'] ?? 0;
-    double shortBondPriceColored = shortBondPrice + coloredPrice;
-    double longBondPriceColored = longBondPrice + coloredPrice;
-    double shortBondPriceGrayscale = shortBondPrice + grayscalePrice;
-    double longBondPriceGrayscale = longBondPrice + coloredPrice;
-
-    double pricePerPage = 0.0;
-
-    if (colorIndex == 1) {
-      pricePerPage = paperSizeIndex == 0 ? shortBondPriceColored : longBondPriceColored;
-    } else {
-      pricePerPage = paperSizeIndex == 0 ? shortBondPriceGrayscale : longBondPriceGrayscale;
-    }
-
-    switch (resolutionIndex) {
-      case 0:
-        pricePerPage += lowResolutionPrice;
-        break;
-      case 1:
-        pricePerPage += mediumResolutionPrice;
-        break;
-      case 2:
-        pricePerPage += highResolutionPrice;
-        break;
-      default:
-        break;
-    }
-
-    return pricePerPage * copies;
-  }
-
-  void fetchScannedImage() async {
-    try {
-      String apiUrl = 'http://${dotenv.env['IP_ADDRESS']!}/scan/scan';
-
-      // Make POST request to backend
-      var response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'paperSizeIndex': widget.paperSizeIndex,
-          'colorIndex': widget.colorIndex,
-          'resolutionIndex': widget.resolutionIndex,
-        }),
+      final imageData = await _copyService.fetchScannedImage(
+        ipAddress: dotenv.env['IP_ADDRESS']!,
+        paperSizeIndex: widget.paperSizeIndex,
+        colorIndex: widget.colorIndex,
+        resolutionIndex: widget.resolutionIndex,
       );
-
-      // Handle response
-      if (response.statusCode == 200) {
-        // Decode the response body
-        Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-        // Extract scanned image data (assuming it's base64 encoded)
-        String imageDataString = responseBody['imageData'];
-        Uint8List decodedBytes = base64Decode(imageDataString);
-
-        // Update state with scanned image data
-        setState(() {
-          scannedImageData = decodedBytes;
-        });
-      } else {
-        // Handle error
-        print('Error fetching scanned image: ${response.statusCode}');
-      }
-    } catch (error) {
-      // Handle error
-      print('Error fetching scanned image: $error');
+      setState(() {
+        scannedImageData = imageData;
+      });
+    } catch (e) {
+      print('Error fetching scanned image: $e');
     }
+  }
+
+  void _handleCopySuccess() {
+    setState(() {
+      paymentInserted = 0.0;
+      proceedToPaymentClicked = false;
+    });
   }
 
   @override
   void dispose() {
+    paymentService.stopFetchingStatus();
     paymentService.dispose();
     super.dispose();
   }
@@ -294,7 +252,16 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
                                               const SizedBox(height: 16),
                                               paymentInserted >= totalPayment
                                                   ? ElevatedButton(
-                                                      onPressed: _sendToPrinter,
+                                                      onPressed: () async {
+                                                        await _copyService.sendToPrinter(
+                                                          ipAddress: dotenv.env['IP_ADDRESS']!,
+                                                          imageData: scannedImageData!,
+                                                          copies: widget.copies,
+                                                          paperSize: getPaperSize(),
+                                                          paymentService: paymentService,
+                                                          onSuccess: _handleCopySuccess
+                                                        );
+                                                      },
                                                       style: ElevatedButton.styleFrom(
                                                         foregroundColor: Colors.white,
                                                         backgroundColor: const Color(0xFF2B2E4A),
@@ -318,6 +285,12 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
                                             onPressed: () {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
+                                                paymentService.startFetchingStatus();
+                                                paymentService.listenToPaymentUpdates((amount) {
+                                                  setState(() {
+                                                    paymentInserted = amount;
+                                                  });
+                                                });
                                               });
                                             },
                                             style: ElevatedButton.styleFrom(
@@ -396,36 +369,36 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
     }
   }
 
-  Future<void> _sendToPrinter() async {
-    if (scannedImageData == null) {
-      print('No scanned image data available.');
-      return;
-    }
+  // Future<void> _sendToPrinter() async {
+  //   if (scannedImageData == null) {
+  //     print('No scanned image data available.');
+  //     return;
+  //   }
 
-    try {
-      String apiUrl = 'http://${dotenv.env['IP_ADDRESS']!}/copy/copy';
+  //   try {
+  //     String apiUrl = 'http://${dotenv.env['IP_ADDRESS']!}/copy/copy';
 
-      String paperSize = widget.paperSizeIndex == 0 ? 'Letter' : 'Legal';
+  //     String paperSize = widget.paperSizeIndex == 0 ? 'Letter' : 'Legal';
 
-      // Make POST request to backend
-      var response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'imageData': base64Encode(scannedImageData!),
-          'copies': widget.copies,
-          'paperSize': paperSize
-        }),
-      );
+  //     // Make POST request to backend
+  //     var response = await http.post(
+  //       Uri.parse(apiUrl),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({
+  //         'imageData': base64Encode(scannedImageData!),
+  //         'copies': widget.copies,
+  //         'paperSize': paperSize
+  //       }),
+  //     );
 
-      // Handle response
-      if (response.statusCode == 200) {
-        print('Print request sent successfully.');
-      } else {
-        print('Error sending print request: ${response.statusCode}');
-      }
-    } catch (error) {
-      print('Error sending print request: $error');
-    }
-  }
+  //     // Handle response
+  //     if (response.statusCode == 200) {
+  //       print('Print request sent successfully.');
+  //     } else {
+  //       print('Error sending print request: ${response.statusCode}');
+  //     }
+  //   } catch (error) {
+  //     print('Error sending print request: $error');
+  //   }
+  // }
 }

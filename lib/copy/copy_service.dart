@@ -5,24 +5,20 @@ import 'package:http/http.dart' as http;
 import 'package:frontend/payment/payment_service.dart';
 import 'package:frontend/pricing/pricing_service.dart';
 
-class PrintingService {
+class CopyService {
 
   // Function to fetch total payment
   Future<double> fetchTotalPayment({
     required int colorIndex,
     required int paperSizeIndex,
-    required int pagesIndex,
-    required int pageCount,
-    required List<int> selectedPages,
+    required int resolutionIndex,
     required int copies,
     required PricingService pricingService,
   }) async {
     double calculatedTotal = await calculateTotalPayment(
       colorIndex: colorIndex,
       paperSizeIndex: paperSizeIndex,
-      pagesIndex: pagesIndex,
-      pageCount: pageCount,
-      selectedPages: selectedPages,
+      resolutionIndex: resolutionIndex,
       copies: copies,
       pricingService: pricingService,
     );
@@ -38,6 +34,9 @@ class PrintingService {
         'shortBondPrice': double.tryParse(pricing['shortBondPrice'] ?? '0') ?? 0,
         'coloredPrice': double.tryParse(pricing['coloredPrice'] ?? '0') ?? 0,
         'grayscalePrice': double.tryParse(pricing['grayscalePrice'] ?? '0') ?? 0,
+        'highResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
+        'mediumResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
+        'lowResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
       };
     } catch (e) {
       print('Error fetching pricing data: $e');
@@ -46,6 +45,9 @@ class PrintingService {
         'shortBondPrice': 0,
         'coloredPrice': 0,
         'grayscalePrice': 0,
+        'highResolutionPrice': 0,
+        'mediumResolutionPrice': 0,
+        'lowResolutionPrice': 0,
       };
     }
   }
@@ -54,9 +56,7 @@ class PrintingService {
   Future<double> calculateTotalPayment({
     required int colorIndex,
     required int paperSizeIndex,
-    required int pagesIndex,
-    required int pageCount,
-    required List<int> selectedPages,
+    required int resolutionIndex,
     required int copies,
     required PricingService pricingService,
   }) async {
@@ -66,6 +66,9 @@ class PrintingService {
     double longBondPrice = pricing['longBondPrice'] ?? 0;
     double coloredPrice = pricing['coloredPrice'] ?? 0;
     double grayscalePrice = pricing['grayscalePrice'] ?? 0;
+    double highResolutionPrice = pricing['highResolutionPrice'] ?? 0;
+    double mediumResolutionPrice = pricing['mediumResolutionPrice'] ?? 0;
+    double lowResolutionPrice = pricing['lowResolutionPrice'] ?? 0;
     double shortBondPriceColored = shortBondPrice + coloredPrice;
     double longBondPriceColored = longBondPrice + coloredPrice;
     double shortBondPriceGrayscale = shortBondPrice + grayscalePrice;
@@ -79,56 +82,104 @@ class PrintingService {
       pricePerPage = paperSizeIndex == 0 ? shortBondPriceGrayscale : longBondPriceGrayscale;
     }
 
-    int totalPageCount = pagesIndex == 0 ? pageCount : selectedPages.length;
-    return pricePerPage * totalPageCount * copies;
+    switch (resolutionIndex) {
+      case 0:
+        pricePerPage += lowResolutionPrice;
+        break;
+      case 1:
+        pricePerPage += mediumResolutionPrice;
+        break;
+      case 2:
+        pricePerPage += highResolutionPrice;
+        break;
+      default:
+        break;
+    }
+
+    return pricePerPage * copies;
   }
 
-  // Function to print document
-  Future<void> printDocument({
+  Future<void> startScan({
     required String ipAddress,
-    required Uint8List pdfBytes,
     required int paperSizeIndex,
     required int colorIndex,
-    required int pagesIndex,
-    required List<int> selectedPages,
-    required int copies,
-    required PaymentService paymentService,
-    required VoidCallback onSuccess,
+    required int resolutionIndex,
+    required Function onSuccess,
+    required Function(String error) onError,
   }) async {
-    // Prepare print settings payload
-    Map<String, dynamic> printSettings = {
-      'paperSizeIndex': paperSizeIndex,
-      'colorIndex': colorIndex,
-      'pagesIndex': pagesIndex,
-      'selectedPages': selectedPages,
-      'copies': copies,
-    };
-
-    // Prepare the request payload with PDF bytes and print settings
-    final requestPayload = {
-      'printSettings': printSettings,
-      'pdfBytes': base64Encode(pdfBytes), // Encode PDF bytes as Base64
-    };
-
-    // Send POST request to backend /print endpoint
     try {
       final response = await http.post(
-        Uri.parse('http://$ipAddress:3000/print/print'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestPayload),
+        Uri.parse('http://$ipAddress:3000/scan/scan'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'paperSizeIndex': paperSizeIndex,
+          'colorIndex': colorIndex,
+          'resolutionIndex': resolutionIndex,
+        }),
       );
 
       if (response.statusCode == 200) {
-        // If printing is successful, reset coin count
+        onSuccess();
+      } else {
+        onError('Failed to start scanning: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      onError('Error starting scan: $e');
+    }
+  }
+
+  Future<Uint8List> fetchScannedImage({
+    required String ipAddress,
+    required int paperSizeIndex,
+    required int colorIndex,
+    required int resolutionIndex,
+  }) async {
+    final response = await http.post(
+      Uri.parse('http://$ipAddress:3000/scan/scan'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'paperSizeIndex': paperSizeIndex,
+        'colorIndex': colorIndex,
+        'resolutionIndex': resolutionIndex,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final responseBody = jsonDecode(response.body);
+      String imageDataString = responseBody['imageData'];
+      return base64Decode(imageDataString);
+    } else {
+      throw Exception('Failed to fetch scanned image');
+    }
+  }
+
+  Future<void> sendToPrinter({
+    required String ipAddress,
+    required Uint8List imageData,
+    required int copies,
+    required String paperSize,
+    required PaymentService paymentService,
+    required VoidCallback onSuccess,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://$ipAddress:3000/copy/copy'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'imageData': base64Encode(imageData),
+          'copies': copies,
+          'paperSize': paperSize,
+        }),
+      );
+
+      if (response.statusCode == 200) {
         await paymentService.resetCounts();
 
         onSuccess();
+        
       } else {
-        // Handle error response
         print('Failed to print: ${response.reasonPhrase}');
-        // Optionally, show error message to user
+        throw Exception('Failed to send print request');
       }
     } catch (e) {
       print('Error printing document: $e');
