@@ -5,24 +5,20 @@ import 'package:http/http.dart' as http;
 import 'package:frontend/payment/payment_service.dart';
 import 'package:frontend/pricing/pricing_service.dart';
 
-class CopyService {
+class ScanService {
   final String ipAddress;
 
-  CopyService(this.ipAddress);
+  ScanService(this.ipAddress);
 
   // Function to fetch total payment
   Future<double> fetchTotalPayment({
     required int colorIndex,
-    required int paperSizeIndex,
     required int resolutionIndex,
-    required int copies,
     required PricingService pricingService,
   }) async {
     double calculatedTotal = await calculateTotalPayment(
       colorIndex: colorIndex,
-      paperSizeIndex: paperSizeIndex,
       resolutionIndex: resolutionIndex,
-      copies: copies,
       pricingService: pricingService,
     );
     return calculatedTotal;
@@ -33,8 +29,6 @@ class CopyService {
     try {
       final pricing = await pricingService.fetchPricingData();
       return {
-        'longBondPrice': double.tryParse(pricing['longBondPrice'] ?? '0') ?? 0,
-        'shortBondPrice': double.tryParse(pricing['shortBondPrice'] ?? '0') ?? 0,
         'coloredPrice': double.tryParse(pricing['coloredPrice'] ?? '0') ?? 0,
         'grayscalePrice': double.tryParse(pricing['grayscalePrice'] ?? '0') ?? 0,
         'highResolutionPrice': double.tryParse(pricing['highRecolutionPrice'] ?? '0') ?? 0,
@@ -44,8 +38,6 @@ class CopyService {
     } catch (e) {
       print('Error fetching pricing data: $e');
       return {
-        'longBondPrice': 0,
-        'shortBondPrice': 0,
         'coloredPrice': 0,
         'grayscalePrice': 0,
         'highResolutionPrice': 0,
@@ -58,48 +50,34 @@ class CopyService {
   // Function to calculate total payment
   Future<double> calculateTotalPayment({
     required int colorIndex,
-    required int paperSizeIndex,
     required int resolutionIndex,
-    required int copies,
     required PricingService pricingService,
   }) async {
     final pricing = await getPricing(pricingService);
 
-    double shortBondPrice = pricing['shortBondPrice'] ?? 0;
-    double longBondPrice = pricing['longBondPrice'] ?? 0;
     double coloredPrice = pricing['coloredPrice'] ?? 0;
     double grayscalePrice = pricing['grayscalePrice'] ?? 0;
     double highResolutionPrice = pricing['highResolutionPrice'] ?? 0;
     double mediumResolutionPrice = pricing['mediumResolutionPrice'] ?? 0;
     double lowResolutionPrice = pricing['lowResolutionPrice'] ?? 0;
-    double shortBondPriceColored = shortBondPrice + coloredPrice;
-    double longBondPriceColored = longBondPrice + coloredPrice;
-    double shortBondPriceGrayscale = shortBondPrice + grayscalePrice;
-    double longBondPriceGrayscale = longBondPrice + coloredPrice;
 
-    double pricePerPage = 0.0;
-
-    if (colorIndex == 1) {
-      pricePerPage = paperSizeIndex == 0 ? shortBondPriceColored : longBondPriceColored;
-    } else {
-      pricePerPage = paperSizeIndex == 0 ? shortBondPriceGrayscale : longBondPriceGrayscale;
-    }
+    double price = 0.0;
 
     switch (resolutionIndex) {
       case 0:
-        pricePerPage += lowResolutionPrice;
+        price = colorIndex == 0 ? (grayscalePrice + lowResolutionPrice): (coloredPrice + lowResolutionPrice);
         break;
       case 1:
-        pricePerPage += mediumResolutionPrice;
+        price = colorIndex == 0 ? (grayscalePrice + lowResolutionPrice): (coloredPrice + mediumResolutionPrice);
         break;
       case 2:
-        pricePerPage += highResolutionPrice;
+        price = colorIndex == 0 ? (grayscalePrice + lowResolutionPrice): (coloredPrice + highResolutionPrice);
         break;
       default:
         break;
     }
 
-    return pricePerPage * copies;
+    return price;
   }
 
   Future<void> startScan({
@@ -154,21 +132,20 @@ class CopyService {
     }
   }
 
-  Future<void> sendToPrinter({
-    required Uint8List imageData,
-    required int copies,
-    required String paperSize,
+  Future<void> uploadScannedImage({
+    required String email,
+    required Uint8List scannedImageData,
     required PaymentService paymentService,
     required VoidCallback onSuccess,
   }) async {
     try {
+      final uri = Uri.parse('http://$ipAddress:3000/scan/sendScannedFile');
       final response = await http.post(
-        Uri.parse('http://$ipAddress:3000/copy/copy'),
+        uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'imageData': base64Encode(imageData),
-          'copies': copies,
-          'paperSize': paperSize,
+          'email': email,
+          'imageData': base64Encode(scannedImageData),
         }),
       );
 
@@ -176,14 +153,13 @@ class CopyService {
         await paymentService.resetCounts();
 
         onSuccess();
-        
       } else {
-        print('Failed to print: ${response.reasonPhrase}');
-        throw Exception('Failed to send print request');
+        print('Error sending scanned image: ${response.statusCode}');
+        throw Exception('Error sending scanned image: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error printing document: $e');
-      throw Exception('Failed to send print request');
+      print('Error sending scanned image: $e');
+      throw Exception('Error sending scanned image: $e');
     }
   }
 

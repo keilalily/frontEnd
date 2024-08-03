@@ -25,7 +25,7 @@ class CopyPaymentScreen extends StatefulWidget {
 }
 
 class CopyPaymentScreenState extends State<CopyPaymentScreen> {
-  final CopyService _copyService = CopyService();
+  final CopyService _copyService = CopyService(dotenv.env['IP_ADDRESS']!);
   double totalPayment = 0.0;
   double paymentInserted = 0.0;
   bool proceedToPaymentClicked = false;
@@ -104,7 +104,6 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
   Future<void> _fetchScannedImage() async {
     try {
       final imageData = await _copyService.fetchScannedImage(
-        ipAddress: dotenv.env['IP_ADDRESS']!,
         paperSizeIndex: widget.paperSizeIndex,
         colorIndex: widget.colorIndex,
         resolutionIndex: widget.resolutionIndex,
@@ -254,7 +253,6 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
                                                   ? ElevatedButton(
                                                       onPressed: () async {
                                                         await _copyService.sendToPrinter(
-                                                          ipAddress: dotenv.env['IP_ADDRESS']!,
                                                           imageData: scannedImageData!,
                                                           copies: widget.copies,
                                                           paperSize: getPaperSize(),

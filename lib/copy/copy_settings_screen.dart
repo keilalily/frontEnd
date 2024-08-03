@@ -13,7 +13,7 @@ class CopySettingsScreen extends StatefulWidget {
 }
 
 class CopySettingsScreenState extends State<CopySettingsScreen> {
-  final CopyService _copyService = CopyService();
+  final CopyService _copyService = CopyService(dotenv.env['IP_ADDRESS']!);
   int _paperSizeIndex = -1; // Track selected index for Paper Size
   int _colorIndex = -1; // Track selected index for Color
   int _resolutionIndex = -1; // Track selected index for Resolution
@@ -79,7 +79,6 @@ class CopySettingsScreenState extends State<CopySettingsScreen> {
 
   Future<void> _startScan() async {
     await _copyService.startScan(
-      ipAddress: dotenv.env['IP_ADDRESS']!,
       paperSizeIndex: _paperSizeIndex,
       colorIndex: _colorIndex,
       resolutionIndex: _resolutionIndex,
