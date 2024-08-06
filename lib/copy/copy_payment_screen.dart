@@ -125,8 +125,8 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
 
   @override
   void dispose() {
-    paymentService.stopFetchingStatus();
-    paymentService.dispose();
+    // paymentService.stopFetchingStatus();
+    // paymentService.dispose();
     super.dispose();
   }
 
@@ -283,7 +283,7 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
                                             onPressed: () {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
-                                                paymentService.startFetchingStatus();
+                                                // paymentService.startFetchingStatus();
                                                 paymentService.listenToPaymentUpdates((amount) {
                                                   setState(() {
                                                     paymentInserted = amount;

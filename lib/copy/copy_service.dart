@@ -173,7 +173,7 @@ class CopyService {
       );
 
       if (response.statusCode == 200) {
-        await paymentService.resetCounts();
+        // await paymentService.resetCounts();
 
         onSuccess();
         

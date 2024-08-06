@@ -122,7 +122,7 @@ class PrintingService {
 
       if (response.statusCode == 200) {
         // If printing is successful, reset coin count
-        await paymentService.resetCounts();
+        // await paymentService.resetCounts();
 
         onSuccess();
       } else {

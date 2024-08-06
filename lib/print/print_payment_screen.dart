@@ -529,6 +529,11 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
     }
 
     paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
+    paymentService.listenToPaymentUpdates((amount) {
+                                                  setState(() {
+                                                    paymentInserted = amount;
+                                                  });
+                                                });
 
     pricingService = PricingService();
 
@@ -612,8 +617,8 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   @override
   void dispose() {
     pdfController.dispose();
-    paymentService.stopFetchingStatus();
-    paymentService.dispose();
+    // paymentService.stopFetchingStatus();
+    // paymentService.dispose();
     super.dispose();
   }
 
@@ -791,12 +796,12 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
                                             onPressed: () {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
-                                                paymentService.startFetchingStatus();
-                                                paymentService.listenToPaymentUpdates((amount) {
-                                                  setState(() {
-                                                    paymentInserted = amount;
-                                                  });
-                                                });
+                                                // paymentService.startFetchingStatus();
+                                                // paymentService.listenToPaymentUpdates((amount) {
+                                                //   setState(() {
+                                                //     paymentInserted = amount;
+                                                //   });
+                                                // });
                                               });
                                             },
                                             style: ElevatedButton.styleFrom(

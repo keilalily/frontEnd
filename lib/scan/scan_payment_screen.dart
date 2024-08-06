@@ -192,8 +192,8 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
 
   @override
   void dispose() {
-    paymentService.stopFetchingStatus();
-    paymentService.dispose();
+    // paymentService.stopFetchingStatus();
+    // paymentService.dispose();
     super.dispose();
   }
 
@@ -341,7 +341,7 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                             onPressed: () {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
-                                                paymentService.startFetchingStatus();
+                                                // paymentService.startFetchingStatus();
                                                 paymentService.listenToPaymentUpdates((amount) {
                                                   setState(() {
                                                     paymentInserted = amount;
