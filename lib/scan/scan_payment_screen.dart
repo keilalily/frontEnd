@@ -38,6 +38,11 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
   void initState() {
     super.initState();
     paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
+    paymentService.listenToPaymentUpdates((amount) {
+      setState(() {
+        paymentInserted = amount;
+      });
+    });
     pricingService = PricingService();
 
     _fetchScannedImage().catchError((e) {
@@ -342,11 +347,11 @@ class ScanPaymentScreenState extends State<ScanPaymentScreen> {
                                               setState(() {
                                                 proceedToPaymentClicked = true;
                                                 // paymentService.startFetchingStatus();
-                                                paymentService.listenToPaymentUpdates((amount) {
-                                                  setState(() {
-                                                    paymentInserted = amount;
-                                                  });
-                                                });
+                                                // paymentService.listenToPaymentUpdates((amount) {
+                                                //   setState(() {
+                                                //     paymentInserted = amount;
+                                                //   });
+                                                // });
                                               });
                                             },
                                             style: ElevatedButton.styleFrom(

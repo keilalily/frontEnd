@@ -530,10 +530,10 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
 
     paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
     paymentService.listenToPaymentUpdates((amount) {
-                                                  setState(() {
-                                                    paymentInserted = amount;
-                                                  });
-                                                });
+      setState(() {
+        paymentInserted = amount;
+      });
+    });
 
     pricingService = PricingService();
 

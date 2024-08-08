@@ -38,6 +38,11 @@ class CopyPaymentScreenState extends State<CopyPaymentScreen> {
     super.initState();
 
     paymentService = PaymentService(dotenv.env['IP_ADDRESS']!);
+    paymentService.listenToPaymentUpdates((amount) {
+      setState(() {
+        paymentInserted = amount;
+      });
+    });
 
     pricingService = PricingService();
 
