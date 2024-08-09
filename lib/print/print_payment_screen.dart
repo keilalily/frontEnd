@@ -863,9 +863,9 @@ class PrintPaymentScreenState extends State<PrintPaymentScreen> {
   String getColor() {
     switch (widget.colorIndex) {
       case 0:
-        return 'Grayscale';
-      case 1:
         return 'Colored';
+      case 1:
+        return 'Grayscale';
       default:
         return '';
     }

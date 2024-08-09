@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -29,11 +31,11 @@ class ScanSettingsScreenState extends State<ScanSettingsScreen> {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: {
+        body: jsonEncode({
           'paperSizeIndex': _paperSizeIndex,
           'colorIndex': _colorIndex,
           'resolutionIndex': _resolutionIndex,
-        },
+        }),
       );
 
       // Check if the request was successful
